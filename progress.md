@@ -226,6 +226,8 @@
 -   [x] Add responsive imagery and alt text.
 -   [x] Add loading/empty states.
 -   [x] Add subtle, accessible motion.
+-   [x] Add a four-image, full-background South Indian-inspired hero slideshow with manual controls and reduced-motion support.
+-   [x] Refine the lead photo with a bridal-style image and frame the silk editorial slide to keep the model's face visible on desktop.
 
 ### Acceptance criteria
 
@@ -235,14 +237,17 @@
 -   [x] Responsive checks completed.
 -   [x] Image layout shifts are controlled.
 
-**Files changed:** Replaced the homepage placeholder with the editorial hero, category cards, new-arrivals empty state, featured preview cards, collection banner, brand story, and newsletter preview. Added reusable homepage sections, category content data, and temporary Unsplash photography in `public/images/`.
+**Files changed:** Replaced the homepage placeholder with the editorial hero, category cards, new-arrivals empty state, featured preview cards, collection banner, brand story, and newsletter preview. Updated the hero to a four-image South Indian-inspired slideshow, refreshed category content and alt text, refined the lead slide to a South Indian bridal portrait, and corrected the silk editorial crop. Added locally hosted Pexels sample photography in `public/images/`.
 
 -   `npm run lint` --- passed.
 -   `npm run typecheck` --- passed.
 -   `npm test` --- 2 tests passed.
 -   `npm run build` --- passed.
 -   Browser check --- primary CTA reached `/shop`; Clothing, Jewellery, and Accessories cards reached their matching placeholder routes.
--   Responsive check --- no horizontal overflow at 320, 375, 768, 1024, or 1440 pixels; all seven homepage images loaded.
+-   Responsive check --- no horizontal overflow at 320, 375, 768, 1024, or 1440 pixels; hero controls remain within the viewport.
+-   Image check --- all four hero slide assets load; category cards retain the existing lazy-loading behavior.
+-   Desktop crop check --- the South Indian bridal lead image is in place and the silk editorial model's face remains visible at 1440x900.
+-   Slideshow check --- previous/next and slide selectors work, auto-advance and pause/resume work, and reduced-motion preference disables auto-advance.
 -   Newsletter check --- email input and submit button are disabled; no address is collected.
 
 **Notes / blockers:** Phase 4 is complete. Temporary Unsplash images are clearly labeled and should be replaced with approved PRIYA campaign/product photography before launch. Testimonials and social content were omitted because no genuine details were supplied. Phase 5 remains NOT STARTED and requires owner approval.
