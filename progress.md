@@ -37,16 +37,16 @@
   Item                         Current value
   ---------------------------- ------------------------------
   Overall status               IN PROGRESS
-  Current phase                Awaiting owner approval for Phase 4
-  Last completed phase         Phase 3 --- Storefront shell
-  Next phase                   Phase 4 --- Homepage and editorial storefront (awaiting approval)
+  Current phase                Awaiting owner approval for Phase 5
+  Last completed phase         Phase 4 --- Homepage and editorial storefront
+  Next phase                   Phase 5 --- Catalogue data model and Supabase foundation (awaiting approval)
   Last updated                 2026-11-18
   Active coding agent          Copilot in VS Code
   Local development verified   Yes; HTTP 200
   Production deployment        Not started
 
-> Phases 0, 1, 2, and 3 are complete. Phase 4 has not started and will
-> not start without owner approval.
+> Phases 0, 1, 2, 3, and 4 are complete. Phase 5 has not started and
+> will not start without owner approval.
 
 ------------------------------------------------------------------------
 
@@ -202,44 +202,50 @@
 -   Responsive browser check --- no horizontal overflow at 320, 375, 768, 1024, or 1440 pixels; desktop and mobile navigation appeared at the expected widths.
 -   Unknown route check --- `/not-a-real-route` returned the not-found page.
 
-**Notes / blockers:** Phase 3 is complete. Phase 4 remains NOT STARTED and requires owner approval.
+**Notes / blockers:** Phase 3 is complete. Phase 4 began after owner approval.
 
 ------------------------------------------------------------------------
 
 ## Phase 4 --- Homepage and editorial storefront
 
-**Status:** NOT STARTED
+**Status:** DONE
 
 ### Tasks
 
--   [ ] Build homepage hero.
--   [ ] Build Clothing category section.
--   [ ] Build Jewellery category section.
--   [ ] Build Accessories category section.
--   [ ] Build new arrivals section.
--   [ ] Build featured products section.
--   [ ] Build collection/editorial banner.
--   [ ] Build brand story section.
--   [ ] Add testimonials only when genuine content is supplied.
--   [ ] Add optional social section only with real content.
--   [ ] Build newsletter UI or integration as scoped.
--   [ ] Add responsive imagery and alt text.
--   [ ] Add loading/empty states.
--   [ ] Add subtle, accessible motion.
+-   [x] Build homepage hero.
+-   [x] Build Clothing category section.
+-   [x] Build Jewellery category section.
+-   [x] Build Accessories category section.
+-   [x] Build new arrivals section.
+-   [x] Build featured products section.
+-   [x] Build collection/editorial banner.
+-   [x] Build brand story section.
+-   [x] Omit testimonials because no genuine customer content was supplied.
+-   [x] Omit social content because no official account was supplied.
+-   [x] Build newsletter UI only; no provider is configured.
+-   [x] Add responsive imagery and alt text.
+-   [x] Add loading/empty states.
+-   [x] Add subtle, accessible motion.
 
 ### Acceptance criteria
 
--   [ ] Homepage sections render in order.
--   [ ] Category and primary CTA links work.
--   [ ] Sample content is clearly demo content.
--   [ ] Responsive checks completed.
--   [ ] Image layout shifts are controlled.
+-   [x] Homepage sections render in order.
+-   [x] Category and primary CTA links work.
+-   [x] Sample content is clearly demo content.
+-   [x] Responsive checks completed.
+-   [x] Image layout shifts are controlled.
 
-**Files changed:** - *To be recorded*
+**Files changed:** Replaced the homepage placeholder with the editorial hero, category cards, new-arrivals empty state, featured preview cards, collection banner, brand story, and newsletter preview. Added reusable homepage sections, category content data, and temporary Unsplash photography in `public/images/`.
 
-**Verification commands and results:** - *To be recorded*
+-   `npm run lint` --- passed.
+-   `npm run typecheck` --- passed.
+-   `npm test` --- 2 tests passed.
+-   `npm run build` --- passed.
+-   Browser check --- primary CTA reached `/shop`; Clothing, Jewellery, and Accessories cards reached their matching placeholder routes.
+-   Responsive check --- no horizontal overflow at 320, 375, 768, 1024, or 1440 pixels; all seven homepage images loaded.
+-   Newsletter check --- email input and submit button are disabled; no address is collected.
 
-**Notes / blockers:** - *None recorded*
+**Notes / blockers:** Phase 4 is complete. Temporary Unsplash images are clearly labeled and should be replaced with approved PRIYA campaign/product photography before launch. Testimonials and social content were omitted because no genuine details were supplied. Phase 5 remains NOT STARTED and requires owner approval.
 
 ------------------------------------------------------------------------
 
