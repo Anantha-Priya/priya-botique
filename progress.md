@@ -37,16 +37,16 @@
   Item                         Current value
   ---------------------------- ------------------------------
   Overall status               IN PROGRESS
-  Current phase                Phase 1 --- Project foundation
-  Last completed phase         Phase 1 --- Project foundation
-  Next phase                   Phase 2 --- Brand system (awaiting approval)
+  Current phase                Awaiting owner approval for Phase 4
+  Last completed phase         Phase 3 --- Storefront shell
+  Next phase                   Phase 4 --- Homepage and editorial storefront (awaiting approval)
   Last updated                 2026-11-18
   Active coding agent          Copilot in VS Code
   Local development verified   Yes; HTTP 200
   Production deployment        Not started
 
-> The project foundation is implemented. Storefront design and the
-> remaining phases have not started.
+> Phases 0, 1, 2, and 3 are complete. Phase 4 has not started and will
+> not start without owner approval.
 
 ------------------------------------------------------------------------
 
@@ -122,74 +122,87 @@
 - `git check-ignore` --- `.env.local` is ignored and `.env.example` is allowed.
 - `npm audit --omit=dev` --- 0 vulnerabilities.
 
-**Notes / blockers:** Full `npm audit` reports 18 high and 2 moderate transitive findings in development tooling. npm's proposed forced fix downgrades tooling across a breaking version; it was not applied. The production dependency audit is clean. No Phase 2 work has been started; wait for owner approval.
+**Notes / blockers:** Full `npm audit` reports 18 high and 2 moderate transitive findings in development tooling. npm's proposed forced fix downgrades tooling across a breaking version; it was not applied. The production dependency audit is clean.
 
 ------------------------------------------------------------------------
 
 ## Phase 2 --- Brand system, global styles, and shared UI foundation
 
-**Status:** NOT STARTED
+**Status:** DONE
 
 ### Tasks
 
--   [ ] Configure Playfair Display.
--   [ ] Configure Inter.
--   [ ] Define PRIYA colour tokens.
--   [ ] Define typography and spacing tokens.
--   [ ] Configure global styles.
--   [ ] Create reusable button variants and shared primitives.
--   [ ] Add INR currency formatting utility.
--   [ ] Add common types and utilities.
--   [ ] Add accessible focus and reduced-motion behavior.
--   [ ] Centralize the confirmed PRIYA brand name and configurable brand assets where practical.
+-   [x] Configure Playfair Display.
+-   [x] Configure Inter.
+-   [x] Define PRIYA colour tokens.
+-   [x] Define typography and spacing tokens.
+-   [x] Configure global styles.
+-   [x] Create reusable button variants and shared primitives.
+-   [x] Add INR currency formatting utility.
+-   [x] Add common types and utilities.
+-   [x] Add accessible focus and reduced-motion behavior.
+-   [x] Centralize the confirmed PRIYA brand name and configurable brand assets where practical.
 
 ### Acceptance criteria
 
--   [ ] Brand tokens applied consistently.
--   [ ] Typography matches the blueprint.
--   [ ] INR formatting verified.
--   [ ] Focus states are visible.
--   [ ] No common viewport overflow.
+-   [x] Brand tokens applied consistently.
+-   [x] Typography matches the blueprint.
+-   [x] INR formatting verified.
+-   [x] Focus states are visible.
+-   [x] No common viewport overflow.
 
-**Files changed:** - *To be recorded*
+**Files changed:** Applied the PRIYA palette, typography, spacing, radius, shadow, focus, selection, and reduced-motion tokens. Updated the root layout and starter page, tuned the shared button component, and added centralized brand data, INR formatting, common store types, focused tests, and setup documentation.
 
-**Verification commands and results:** - *To be recorded*
+**Verification commands and results:**
+- `npm run lint` --- passed.
+- `npm run typecheck` --- passed.
+- `npm test` --- 2 formatter tests passed.
+- `npm run build` --- passed.
+- Browser smoke test --- Inter body font and Playfair Display heading font confirmed; visible 2px focus outline confirmed.
+- Responsive viewport check --- no horizontal overflow at 320, 375, 768, 1024, or 1440 pixels.
 
-**Notes / blockers:** - *None recorded*
+**Notes / blockers:** Phase 2 is complete.
 
 ------------------------------------------------------------------------
 
 ## Phase 3 --- Storefront shell and navigation
 
-**Status:** NOT STARTED
+**Status:** DONE
 
 ### Tasks
 
--   [ ] Create storefront route group and layout.
--   [ ] Build announcement bar.
--   [ ] Build desktop header.
--   [ ] Add search, account, wishlist, and cart actions.
--   [ ] Build mobile navigation drawer.
--   [ ] Build reusable footer.
--   [ ] Use Next.js Link for internal navigation.
--   [ ] Add active, focus, and hover states.
--   [ ] Verify keyboard navigation.
--   [ ] Verify mobile, tablet, and desktop behavior.
--   [ ] Avoid broken links or provide clear temporary placeholders.
+-   [x] Create storefront route group and layout.
+-   [x] Build announcement bar.
+-   [x] Build desktop header.
+-   [x] Add search, account, wishlist, and cart actions.
+-   [x] Build mobile navigation drawer.
+-   [x] Build reusable footer.
+-   [x] Use Next.js Link for internal navigation.
+-   [x] Add active, focus, and hover states.
+-   [x] Verify keyboard navigation.
+-   [x] Verify mobile, tablet, and desktop behavior.
+-   [x] Avoid broken links or provide clear temporary placeholders.
 
 ### Acceptance criteria
 
--   [ ] Header/footer render consistently.
--   [ ] Desktop navigation works.
--   [ ] Mobile drawer works with keyboard and touch.
--   [ ] Internal links work.
--   [ ] No horizontal overflow.
+-   [x] Header/footer render consistently.
+-   [x] Desktop navigation works.
+-   [x] Mobile drawer opens, closes, and navigates with keyboard and pointer.
+-   [x] Internal links work.
+-   [x] No horizontal overflow.
 
-**Files changed:** - *To be recorded*
+**Files changed:** Added the shared storefront route group and layout, announcement bar, responsive desktop header, mobile navigation drawer, footer, centralized navigation data, active links, and clearly labeled placeholder destinations. Updated the root page to use the shared shell and fixed Next.js Cache Components prerender/navigation boundaries.
 
-**Verification commands and results:** - *To be recorded*
+-   `npm run lint` --- passed.
+-   `npm run typecheck` --- passed.
+-   `npm test` --- 2 tests passed.
+-   `npm run build` --- passed; known placeholder destinations prerendered.
+-   Production browser check --- desktop navigation reached `/category/clothing` and marked it active; mobile drawer navigated to `/cart` and closed.
+-   Keyboard check --- mobile drawer opened with Enter, showed the active route, and closed with Escape.
+-   Responsive browser check --- no horizontal overflow at 320, 375, 768, 1024, or 1440 pixels; desktop and mobile navigation appeared at the expected widths.
+-   Unknown route check --- `/not-a-real-route` returned the not-found page.
 
-**Notes / blockers:** - *None recorded*
+**Notes / blockers:** Phase 3 is complete. Phase 4 remains NOT STARTED and requires owner approval.
 
 ------------------------------------------------------------------------
 

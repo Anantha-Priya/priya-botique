@@ -4,7 +4,7 @@ The PRIYA boutique storefront is built with Next.js App Router, React, TypeScrip
 
 ## Requirements
 
-- Node.js 20.9 or newer
+- Node.js 22.6 or newer
 - npm
 
 ## Local development
@@ -23,6 +23,7 @@ Open [http://localhost:3000](http://localhost:3000).
 ```bash
 npm run lint
 npm run typecheck
+npm test
 npm run build
 ```
 
