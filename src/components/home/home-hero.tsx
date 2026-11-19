@@ -15,24 +15,16 @@ import { buttonVariants } from "@/components/ui/button";
 
 const heroSlides = [
   {
-    src: "/images/south-indian-bridal-editorial.jpg",
-    alt: "South Indian bride in a red saree and ornate gold jewellery, adjusting her earring.",
-    objectPosition: "center 20%",
+    src: "/images/homepage-slide-saree.jpg",
+    alt: "Woman wearing a green and gold South Indian silk saree outdoors.",
   },
   {
-    src: "/images/south-indian-colourful-saree.jpg",
-    alt: "Woman wearing a bright yellow and magenta saree in a garden.",
-    objectPosition: "center 48%",
+    src: "/images/homepage-slide-kurta.jpg",
+    alt: "Woman wearing a bright yellow and green traditional kurta outfit.",
   },
   {
-    src: "/images/south-indian-silk-editorial.jpg",
-    alt: "Woman wearing a magenta and gold saree with traditional jewellery.",
-    objectPosition: "center 5%",
-  },
-  {
-    src: "/images/south-indian-temple-jewellery.jpg",
-    alt: "Close-up of an ornate gold pendant worn with a gold-toned saree.",
-    objectPosition: "center 52%",
+    src: "/images/homepage-slide-jewellery.jpg",
+    alt: "Traditional South Indian gold temple jewellery worn with a silk saree.",
   },
 ] as const;
 
@@ -90,13 +82,20 @@ export function HomeHero() {
           >
             <Image
               src={slide.src}
+              alt=""
+              fill
+              sizes="100vw"
+              aria-hidden="true"
+              className="scale-110 object-cover blur-xl brightness-50"
+            />
+            <Image
+              src={slide.src}
               alt={slide.alt}
               fill
               preload={index === 0}
               loading={index === 0 ? undefined : "eager"}
               sizes="100vw"
-              style={{ objectPosition: slide.objectPosition }}
-              className="object-cover"
+              className="object-cover md:object-contain md:object-right"
             />
           </div>
         ))}
@@ -138,9 +137,6 @@ export function HomeHero() {
               <ArrowDown aria-hidden="true" className="size-4" />
             </Link>
           </div>
-          <p className="mt-8 text-xs text-white/75">
-            Sample Pexels photography · visual direction only
-          </p>
         </div>
       </div>
 

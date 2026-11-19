@@ -37,16 +37,17 @@
   Item                         Current value
   ---------------------------- ------------------------------
   Overall status               IN PROGRESS
-  Current phase                Awaiting owner approval for Phase 5
+  Current phase                Phase 5 --- Catalogue data model and Supabase foundation
   Last completed phase         Phase 4 --- Homepage and editorial storefront
-  Next phase                   Phase 5 --- Catalogue data model and Supabase foundation (awaiting approval)
+  Next phase                   Phase 6 --- Product catalogue, category, and collection pages (requires Phase 5 completion and owner approval)
   Last updated                 2026-11-18
   Active coding agent          Copilot in VS Code
   Local development verified   Yes; HTTP 200
   Production deployment        Not started
 
-> Phases 0, 1, 2, 3, and 4 are complete. Phase 5 has not started and
-> will not start without owner approval.
+> Phases 0 through 4 are complete. Phase 5 was started with owner approval
+> using the hosted Supabase setup. Its code foundation is implemented, but
+> deployment and database acceptance checks are pending project access.
 
 ------------------------------------------------------------------------
 
@@ -256,25 +257,25 @@
 
 ## Phase 5 --- Catalogue data model and Supabase foundation
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 ### Tasks
 
--   [ ] Create/configure Supabase development project.
--   [ ] Configure browser and server clients securely.
--   [ ] Create version-controlled migrations.
--   [ ] Create `profiles` table.
--   [ ] Create `categories` table.
--   [ ] Create `products` table.
--   [ ] Create `product_images` table.
--   [ ] Create `product_variants` table.
--   [ ] Create `collections` table.
--   [ ] Create `collection_products` table.
--   [ ] Add keys, constraints, indexes, and timestamps.
--   [ ] Add public catalogue read policies.
--   [ ] Restrict catalogue writes to authorized admin operations.
--   [ ] Add clearly labelled demo seed data.
--   [ ] Document database setup.
+-   [ ] Create/configure hosted Supabase development project.
+-   [x] Configure browser and server clients securely.
+-   [x] Create version-controlled migrations.
+-   [x] Create `profiles` table.
+-   [x] Create `categories` table.
+-   [x] Create `products` table.
+-   [x] Create `product_images` table.
+-   [x] Create `product_variants` table.
+-   [x] Create `collections` table.
+-   [x] Create `collection_products` table.
+-   [x] Add keys, constraints, indexes, and timestamps.
+-   [x] Add public catalogue read policies.
+-   [x] Restrict catalogue writes to authorized admin operations.
+-   [x] Add clearly labelled demo seed data.
+-   [x] Document database setup.
 
 ### Acceptance criteria
 
@@ -282,13 +283,25 @@
 -   [ ] Relationships and constraints verified.
 -   [ ] RLS policies tested.
 -   [ ] Demo seed data works.
--   [ ] Secrets remain server-side.
+-   [x] Secrets remain server-side; clients use only the publishable key.
 
-**Files changed:** - *To be recorded*
+**Files changed:** `supabase/config.toml`, `supabase/migrations/20261118000000_catalogue_foundation.sql`, `supabase/seed.sql`, `supabase/tests/catalogue_rls_test.sql`, `supabase/README.md`, `src/lib/supabase/`, `src/proxy.ts`, `.env.example`, `package.json`, `package-lock.json`, `README.md`.
 
-**Verification commands and results:** - *To be recorded*
+**Verification commands and results:**
 
-**Notes / blockers:** - *None recorded*
+-   `npm run lint` --- passed.
+-   `npm run typecheck` --- passed.
+-   `npm test` --- passed; 2 tests.
+-   `npm run build` --- passed.
+-   `npm audit --omit=dev` --- 0 runtime vulnerabilities. The install reported 20 advisories across the full dependency tree; no unrelated automatic fixes were applied.
+-   Supabase Auth health endpoint --- HTTP 200 using the configured publishable key; `GET /rest/v1/categories` returned HTTP 404, indicating the catalogue table is not present through the Data API.
+-   Server-side Supabase SDK request using the configured secret key --- reached PostgREST; it returned `PGRST205` because `public.categories` is not present yet. The secret value was not found in client static output.
+-   Network check --- the project HTTPS endpoint resolves to IPv4 addresses but no AAAA record was returned by local or public DNS; IPv6 connectivity is therefore not verified or configurable via API keys.
+-   `npx supabase projects list` --- CLI authentication succeeded and returned the project as `ACTIVE_HEALTHY`; repository link is not set.
+-   Supabase migrations and seed --- not run; the project database password is not available in the temporary local credentials file.
+-   pgTAP RLS tests --- not run; Docker and a local Supabase stack are not installed.
+
+**Notes / blockers:** The owner configured the project URL, publishable key, and a new-format secret key in the ignored `.env.local`. The browser/server session clients use the publishable key; `src/lib/supabase/admin.ts` provides a separate server-only client for trusted backend tasks. No IP allow-list changes were made. Supabase client packages, browser/server helpers, Next.js 16 session-refresh proxy, and CLI are installed. CLI login succeeded and the project is active, but this repository is not linked because its database password is still unavailable. The owner approved inserting the demo seed, which includes active sample categories. Do not start Phase 6 until Phase 5 acceptance checks pass and the owner approves.
 
 ------------------------------------------------------------------------
 

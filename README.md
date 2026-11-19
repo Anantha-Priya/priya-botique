@@ -1,6 +1,6 @@
 # PRIYA Boutique
 
-The PRIYA boutique storefront is built with Next.js App Router, React, TypeScript, and Tailwind CSS. Its planned integrations include Supabase, Cloudinary, and Razorpay; those services are not configured in this foundation phase.
+The PRIYA boutique storefront is built with Next.js App Router, React, TypeScript, and Tailwind CSS. Supabase client and catalogue-schema groundwork is in place, but no hosted Supabase project is configured yet. Cloudinary and Razorpay remain planned integrations.
 
 ## Requirements
 
@@ -30,6 +30,8 @@ npm run build
 ## Environment variables
 
 Copy `.env.example` to `.env.local` when configuring integrations. Keep real credentials in `.env.local`; it is ignored by Git. Never expose server-only secrets through `NEXT_PUBLIC_` variables.
+
+For the Supabase project, migrations, demo seed, and access rules, see [the Supabase setup guide](./supabase/README.md).
 
 ## UI foundation
 
