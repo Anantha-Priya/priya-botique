@@ -464,10 +464,10 @@ content.
 
 ### Tasks
 
-1.  Create a Supabase project in an appropriate India region if
-    available and suitable.
-2.  Configure local Supabase development workflow as appropriate for the
-    chosen setup.
+1.  Use the owner's existing original Supabase project as the sole
+    application database; do not create or link a second project.
+2.  Configure local Supabase access without Docker unless the owner
+    explicitly changes that requirement. Never reset a hosted database.
 3.  Add Supabase client packages and separate browser/server client
     utilities using current official guidance.
 4.  Create version-controlled SQL migrations.
@@ -503,7 +503,8 @@ content.
 
 ### Acceptance criteria
 
--   Migrations apply successfully in the target development environment.
+-   The migrations are recorded and verified against the owner's original
+    project; no second hosted project is used.
 -   Foreign keys and constraints work.
 -   Public users can read only active catalogue content.
 -   Unauthorized users cannot write catalogue records.

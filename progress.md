@@ -37,17 +37,23 @@
   Item                         Current value
   ---------------------------- ------------------------------
   Overall status               IN PROGRESS
-  Current phase                Phase 5 --- Catalogue data model and Supabase foundation
-  Last completed phase         Phase 4 --- Homepage and editorial storefront
-  Next phase                   Phase 6 --- Product catalogue, category, and collection pages (requires Phase 5 completion and owner approval)
-  Last updated                 2026-11-18
+  Current phase                Phase 6 --- Original-project catalogue verification complete
+  Last completed phase         Phase 6 --- Product catalogue, category, and collection pages
+  Next phase                   Phase 7 --- Not started; wait for explicit owner approval
+  Last updated                 2026-11-20
   Active coding agent          Copilot in VS Code
   Local development verified   Yes; HTTP 200
   Production deployment        Not started
 
-> Phases 0 through 4 are complete. Phase 5 was started with owner approval
-> using the hosted Supabase setup. Its code foundation is implemented, but
-> deployment and database acceptance checks are pending project access.
+> Phases 0 through 4 are complete. Phase 5 code and schema are prepared.
+> The owner selected the existing hosted Supabase project for Phase 5.
+> The application and repository link use only the original Supabase project
+> (`wpikdibypalxgwvwpugt`). The Phase 5 schema is present, but its pgTAP RLS
+> suite remains unexecuted. After explicit owner approval, the Phase 6 demo
+> fixture was added to the original project and the catalogue pages were
+> verified locally. Active demo records are publicly readable. Do not use the
+> separate project for future development or testing, and do not start Phase 7
+> without owner approval.
 
 ------------------------------------------------------------------------
 
@@ -251,7 +257,7 @@
 -   Slideshow check --- previous/next and slide selectors work, auto-advance and pause/resume work, and reduced-motion preference disables auto-advance.
 -   Newsletter check --- email input and submit button are disabled; no address is collected.
 
-**Notes / blockers:** Phase 4 is complete. Temporary Unsplash images are clearly labeled and should be replaced with approved PRIYA campaign/product photography before launch. Testimonials and social content were omitted because no genuine details were supplied. Phase 5 remains NOT STARTED and requires owner approval.
+**Notes / blockers:** Phase 4 is complete. Temporary Unsplash images are clearly labeled and should be replaced with approved PRIYA campaign/product photography before launch. Testimonials and social content were omitted because no genuine details were supplied. Phase 5 began with owner approval.
 
 ------------------------------------------------------------------------
 
@@ -261,7 +267,7 @@
 
 ### Tasks
 
--   [ ] Create/configure hosted Supabase development project.
+-   [x] Confirm and link the owner-selected hosted Supabase project.
 -   [x] Configure browser and server clients securely.
 -   [x] Create version-controlled migrations.
 -   [x] Create `profiles` table.
@@ -279,13 +285,13 @@
 
 ### Acceptance criteria
 
--   [ ] Migrations apply successfully.
--   [ ] Relationships and constraints verified.
+-   [x] Migrations applied and migration history synchronized.
+-   [x] Relationships and constraints verified against the existing schema.
 -   [ ] RLS policies tested.
--   [ ] Demo seed data works.
+-   [x] Demo seed data works.
 -   [x] Secrets remain server-side; clients use only the publishable key.
 
-**Files changed:** `supabase/config.toml`, `supabase/migrations/20261118000000_catalogue_foundation.sql`, `supabase/seed.sql`, `supabase/tests/catalogue_rls_test.sql`, `supabase/README.md`, `src/lib/supabase/`, `src/proxy.ts`, `.env.example`, `package.json`, `package-lock.json`, `README.md`.
+**Files changed:** `supabase/config.toml`, `supabase/migrations/20261118000000_catalogue_foundation.sql`, `supabase/migrations/20261119000000_catalogue_child_updated_at.sql`, `supabase/seed.sql`, `supabase/tests/catalogue_rls_test.sql`, `supabase/README.md`, `src/lib/supabase/`, `src/proxy.ts`, `.env.example`, `package.json`, `package-lock.json`, `README.md`.
 
 **Verification commands and results:**
 
@@ -294,52 +300,84 @@
 -   `npm test` --- passed; 2 tests.
 -   `npm run build` --- passed.
 -   `npm audit --omit=dev` --- 0 runtime vulnerabilities. The install reported 20 advisories across the full dependency tree; no unrelated automatic fixes were applied.
--   Supabase Auth health endpoint --- HTTP 200 using the configured publishable key; `GET /rest/v1/categories` returned HTTP 404, indicating the catalogue table is not present through the Data API.
--   Server-side Supabase SDK request using the configured secret key --- reached PostgREST; it returned `PGRST205` because `public.categories` is not present yet. The secret value was not found in client static output.
+-   Supabase Auth health endpoint --- HTTP 200 using the configured publishable key. Before applying the schema, `/rest/v1/categories` returned HTTP 404; after applying, the public API returned the three active demo categories.
+-   Server-side Supabase SDK request using the configured secret key --- reached PostgREST before schema application and returned `PGRST205` because `public.categories` was not present. The secret value was not found in client static output.
 -   Network check --- the project HTTPS endpoint resolves to IPv4 addresses but no AAAA record was returned by local or public DNS; IPv6 connectivity is therefore not verified or configurable via API keys.
--   `npx supabase projects list` --- CLI authentication succeeded and returned the project as `ACTIVE_HEALTHY`; repository link is not set.
--   Supabase migrations and seed --- not run; the project database password is not available in the temporary local credentials file.
--   pgTAP RLS tests --- not run; Docker and a local Supabase stack are not installed.
+-   `npx supabase projects list --output-format json` --- verified the owner-selected project name, reference, region, and active status.
+-   `npx supabase link --project-ref wpikdibypalxgwvwpugt` --- linked the repository and confirmed the local reference exactly matched the selected project.
+-   `npx supabase db push --remote --include-seed --skip-vault --dry-run` --- identified the selected production project and listed the migration and seed as pending; dry run made no changes.
+-   `npx supabase db push --remote --include-seed --skip-vault --yes` --- stopped at the first statement with `relation "profiles" already exists` (SQLSTATE 42P07). No migration was recorded and seed execution was not reached.
+-   Read-only schema audit --- all seven tables already exist; key constraints, indexes, numeric(10,2) pricing, RLS enablement/policies, and existing trigger helpers were inspected. `product_images` and `collection_products` lack `updated_at` and update triggers. The migration history has no rows, and the demo seed records are absent.
+-   `npx supabase migration repair 20261118000000 --status applied --remote --yes` --- recorded the verified pre-existing foundation in migration history; no schema was changed by this command.
+-   `npx supabase db push --remote --include-seed --skip-vault --yes` --- applied `20261119000000_catalogue_child_updated_at.sql` and `supabase/seed.sql` successfully.
+-   `npx supabase migration list --remote` --- local and remote versions match for `20261118000000` and `20261119000000`.
+-   Read-only post-apply checks --- confirmed `updated_at` columns and triggers on both child tables, three active demo categories, inactive demo products/collection, and public REST visibility of active categories while inactive demo records remain hidden.
+-   `npx supabase start` --- attempted after Docker installation; the local Supabase stack could not start because Docker Desktop reported it was unable to start while pulling the Studio image. Per the owner's instruction, no further Docker tasks were attempted.
+-   pgTAP RLS suite --- not run. The suite has 98 assertions, matching `plan(98)`; the owner chose to proceed without Docker.
 
-**Notes / blockers:** The owner configured the project URL, publishable key, and a new-format secret key in the ignored `.env.local`. The browser/server session clients use the publishable key; `src/lib/supabase/admin.ts` provides a separate server-only client for trusted backend tasks. No IP allow-list changes were made. Supabase client packages, browser/server helpers, Next.js 16 session-refresh proxy, and CLI are installed. CLI login succeeded and the project is active, but this repository is not linked because its database password is still unavailable. The owner approved inserting the demo seed, which includes active sample categories. Do not start Phase 6 until Phase 5 acceptance checks pass and the owner approves.
+**Notes / blockers:** The owner configured the project URL, publishable key, and a new-format secret key in the ignored `.env.local`. The browser/server session clients use the publishable key; `src/lib/supabase/admin.ts` provides a separate server-only client for trusted backend tasks. No IP allow-list changes were made. Supabase client packages, browser/server helpers, Next.js 16 session-refresh proxy, and CLI are installed. The owner explicitly authorized migration-history reconciliation, the additive migration, and seed on the selected production project. No reset or drop was run. The pgTAP suite was not run against production because it creates test users and catalogue rows; a local Supabase stack failed to start, and the owner directed us to continue without Docker. Phase 5 remains IN PROGRESS because the automated RLS write-denial assertions are unexecuted. The owner explicitly requested proceeding to Phase 6 with this limitation recorded.
 
 ------------------------------------------------------------------------
 
 ## Phase 6 --- Product catalogue, category, and collection pages
 
-**Status:** NOT STARTED
+**Status:** DONE
 
 ### Tasks
 
--   [ ] Build `/shop`.
--   [ ] Build `/category/[slug]`.
--   [ ] Build `/collections`.
--   [ ] Build `/collections/[slug]`.
--   [ ] Build `/new-arrivals`.
--   [ ] Build reusable product card.
--   [ ] Build responsive product grid.
--   [ ] Add category navigation and breadcrumbs.
--   [ ] Add sorting.
--   [ ] Add category, price, availability, colour, size, and relevant
+-   [x] Build `/shop`.
+-   [x] Build `/category/[slug]`.
+-   [x] Build `/collections`.
+-   [x] Build `/collections/[slug]`.
+-   [x] Build `/new-arrivals`.
+-   [x] Build reusable product card.
+-   [x] Build responsive product grid.
+-   [x] Add category navigation and breadcrumbs.
+-   [x] Add sorting.
+-   [x] Add category, price, availability, colour, size, and relevant
     attribute filters.
--   [ ] Preserve filters in URL parameters where practical.
--   [ ] Add pagination/incremental loading.
--   [ ] Add loading, empty, and error states.
--   [ ] Add page metadata.
+-   [x] Preserve filters in URL parameters where practical.
+-   [x] Add pagination/incremental loading.
+-   [x] Add loading, empty, and error states.
+-   [x] Add page metadata.
 
 ### Acceptance criteria
 
--   [ ] Catalogue data is accurate.
--   [ ] Category and collection results are correct.
--   [ ] Filters and sorting work together.
--   [ ] Pagination works without duplicate/missing results.
--   [ ] Out-of-stock states are accurate.
+-   [x] Product name, image, price, and stock display verified with published demo products on the original project.
+-   [x] Category and collection queries restrict results to active matching records.
+-   [x] Filters and sorting work together and remain in the URL.
+-   [x] Multi-page results verified with enough published products to span pages on the original project.
+-   [x] Out-of-stock card state verified with published demo products on the original project.
 
-**Files changed:** - *To be recorded*
+**Files changed:** `src/app/(store)/[...segments]/page.tsx`, `src/app/(store)/shop/page.tsx`, `src/app/(store)/category/[slug]/page.tsx`, `src/app/(store)/collections/page.tsx`, `src/app/(store)/collections/[slug]/page.tsx`, `src/app/(store)/new-arrivals/page.tsx`, `src/app/(store)/loading.tsx`, `src/app/(store)/error.tsx`, `src/components/catalogue/`, `src/lib/catalogue.ts`, `src/lib/catalogue-filters.ts`, `src/lib/catalogue-filters.test.mjs`, `supabase/catalogue-original-project-demo-seed.sql`, `supabase/README.md`, `progress.md`.
 
-**Verification commands and results:** - *To be recorded*
+**Verification commands and results:**
 
-**Notes / blockers:** - *None recorded*
+-   `npm run lint` --- passed.
+-   `npm run typecheck` --- passed.
+-   `npm test` --- passed; 5 tests.
+-   `npm run build` --- passed; all Phase 6 routes compiled. At that time, the local environment used the now-retired separate project.
+-   `git diff --check` --- passed.
+-   Historical Phase 6 test setup --- the demo fixture was previously used on a separate project; that project is retired from this repository's workflow. No future development or testing should target it.
+-   Historical migration preview --- listed the two reviewed catalogue migrations; they were applied to the then-separate project without running the default seed workflow.
+-   Historical fixture execution --- inserted 3 active demo categories, 16 active products, 16 product images, 16 active default variants, 1 active demo collection, and 16 collection links. Rerunning left counts unchanged; no records were updated or deleted.
+-   Historical database verification --- read-only queries confirmed numeric INR prices, product/category/image/variant/collection relationships, active statuses, stock values, and foreign keys.
+-   Historical public API checks --- nested category, image, variant, and collection relationships returned successfully for anonymous reads.
+-   Historical image checks --- all 8 unique illustrative URLs returned HTTP 200; the browser confirmed product images loaded.
+-   Historical browser checks --- product cards, category filtering, collection pages, sorting, combined filters, pagination, and new arrivals behaved as expected with the separate project's fixture data.
+-   Historical responsive check --- 375px viewport had no horizontal overflow.
+-   Next.js 16 runtime check --- explicit Suspense boundaries were added around uncached catalogue reads; production build and browser route checks passed.
+-   Original-project schema audit --- all seven catalogue tables, 61 columns, 36 constraints, 20 indexes, 7 update triggers, and 15 RLS policies were present; both local migrations were already recorded. No schema migration was needed or applied.
+-   Approved transfer preflight --- confirmed all three existing categories were active and found no product-slug, `P6D-` SKU, or collection-slug conflicts.
+-   Approved fixture execution --- the first CLI attempt was blocked by its consent guard and changed nothing; the same fixture then completed on `wpikdibypalxgwvwpugt` with `--yes` after owner approval.
+-   Post-transfer database verification --- 16 active products, 16 product images, 16 active default variants, 1 active collection, and 16 collection links. All products have active categories, a primary image, and a default variant. The three categories were unchanged; two inactive placeholders, their two variants, the prior inactive collection, and its link remain.
+-   Public Data API and localhost --- anonymous nested collection query returned HTTP 200; `http://localhost:3000/shop` returned HTTP 200 and showed the original project's demo products.
+-   Browser verification on the original project --- shop showed 16 items over 12+4 pages; clothing showed 8 and jewellery filtering showed 4; collection index/detail showed the active collection and 16 linked items over 12+4 pages; combined jewellery/price/stock/sort filters returned the expected 2 items; price sorting and new arrivals were correctly ordered; all 16 product images loaded and out-of-stock labels displayed.
+-   `npm run lint`, `npm run typecheck`, `npm test` (5/5), and `npm run build` --- passed after the approved transfer.
+-   Secret exposure check --- the configured server secret was absent from all 29 built client static files; its value was not printed.
+-   `git diff --check` --- passed.
+
+**Notes / blockers:** The illustrative Unsplash images and sample INR pricing are demo data, not approved real inventory. The three existing category `image_url` values remain null; category metadata was intentionally preserved. These active demo records are publicly readable on every storefront using the original project, not only localhost. Phase 5's pgTAP RLS suite remains deferred as directed; Phase 7 has not started and awaits owner approval.
 
 ------------------------------------------------------------------------
 

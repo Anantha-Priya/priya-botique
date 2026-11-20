@@ -3,30 +3,6 @@ import { notFound } from "next/navigation";
 
 const placeholderPages: Record<string, { title: string; description: string }> =
   {
-    shop: {
-      title: "Shop",
-      description: "The product catalogue will be added in a later phase.",
-    },
-    "category/clothing": {
-      title: "Clothing",
-      description: "The clothing catalogue will be added in a later phase.",
-    },
-    "category/jewellery": {
-      title: "Jewellery",
-      description: "The jewellery catalogue will be added in a later phase.",
-    },
-    "category/accessories": {
-      title: "Accessories",
-      description: "The accessories catalogue will be added in a later phase.",
-    },
-    collections: {
-      title: "Collections",
-      description: "Curated collections will be added in a later phase.",
-    },
-    "new-arrivals": {
-      title: "New arrivals",
-      description: "New arrivals will be shown when catalogue data is available.",
-    },
     about: {
       title: "About PRIYA",
       description: "The boutique story will be added when its details are provided.",
