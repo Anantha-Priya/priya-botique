@@ -27,9 +27,17 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const { error } = await supabase.auth.getClaims();
-  if (error) {
-    throw error;
+  const { data } = await supabase.auth.getUser();
+  const isProtectedAccountRoute =
+    request.nextUrl.pathname === "/account" ||
+    request.nextUrl.pathname.startsWith("/account/");
+
+  if (isProtectedAccountRoute && !data.user) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.search = "";
+    loginUrl.searchParams.set("next", request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   return response;

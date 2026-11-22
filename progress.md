@@ -37,10 +37,10 @@
   Item                         Current value
   ---------------------------- ------------------------------
   Overall status               IN PROGRESS
-  Current phase                Phase 6 --- Original-project catalogue verification complete
+  Current phase                Phase 8 --- Authentication, customer profile, and addresses
   Last completed phase         Phase 6 --- Product catalogue, category, and collection pages
-  Next phase                   Phase 7 --- Not started; wait for explicit owner approval
-  Last updated                 2026-11-20
+  Next phase                   Phase 9 --- Cart and wishlist
+  Last updated                 2026-11-21
   Active coding agent          Copilot in VS Code
   Local development verified   Yes; HTTP 200
   Production deployment        Not started
@@ -52,8 +52,10 @@
 > suite remains unexecuted. After explicit owner approval, the Phase 6 demo
 > fixture was added to the original project and the catalogue pages were
 > verified locally. Active demo records are publicly readable. Do not use the
-> separate project for future development or testing, and do not start Phase 7
-> without owner approval.
+> separate project for future development or testing. Phase 7 core product
+> detail work is complete; delivery/returns policies and Cloudinary upload
+> credentials plus an authorized admin flow remain pending. Phase 8 was
+> reviewed and is independent of those unfinished Phase 7 tasks.
 
 ------------------------------------------------------------------------
 
@@ -263,7 +265,7 @@
 
 ## Phase 5 --- Catalogue data model and Supabase foundation
 
-**Status:** IN PROGRESS
+**Status:** IN PROGRESS --- core implementation complete
 
 ### Tasks
 
@@ -383,73 +385,101 @@
 
 ## Phase 7 --- Product detail and media management
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 ### Tasks
 
--   [ ] Build `/products/[slug]`.
--   [ ] Display product information and INR price.
--   [ ] Build accessible image gallery.
--   [ ] Build flexible variant selectors.
--   [ ] Support clothing and non-clothing attributes.
--   [ ] Validate variant selection.
--   [ ] Add quantity control and stock limits.
+-   [x] Build `/products/[slug]`.
+-   [x] Display product information and INR price.
+-   [x] Build accessible image gallery.
+-   [x] Build flexible variant selectors.
+-   [x] Support clothing and non-clothing attributes.
+-   [x] Validate variant selection.
+-   [x] Add quantity control and stock limits.
 -   [ ] Add approved delivery/return information.
--   [ ] Add related products.
--   [ ] Configure Cloudinary integration.
--   [ ] Add secure image upload flow.
--   [ ] Validate image type, size, and authorization.
+-   [x] Add related products.
+-   [ ] Configure Cloudinary integration; credentials are not present in `.env.local`.
+-   [ ] Add secure image upload flow; pending admin authorization.
+-   [ ] Validate image type, size, and authorization; pending upload flow.
 
 ### Acceptance criteria
 
--   [ ] Product route resolves by slug.
--   [ ] Variant selection behaves correctly.
--   [ ] Products without clothing sizes work.
--   [ ] Quantity respects stock.
--   [ ] Images are optimized and accessible.
--   [ ] Upload secrets remain server-only.
+-   [x] Product route resolves by slug.
+-   [x] Variant selection behaves correctly.
+-   [x] Products without clothing sizes work.
+-   [x] Quantity respects stock.
+-   [x] Images are responsive and accessible.
+-   [ ] Upload secrets remain server-only; no upload flow or secrets are active.
 
-**Files changed:** - *To be recorded*
+**Files changed:** `src/app/(store)/products/[slug]/page.tsx`, `src/components/catalogue/product-detail.tsx`, `src/components/catalogue/product-card.tsx`, `src/lib/catalogue.ts`, `src/lib/product-selection.ts`, `src/lib/product-selection.test.mjs`, `package.json`, `progress.md`.
 
-**Verification commands and results:** - *To be recorded*
+**Verification commands and results:**
 
-**Notes / blockers:** - *None recorded*
+-   `npm run lint` --- passed.
+-   `npm run typecheck` --- passed.
+-   `npm test` --- 8 tests passed.
+-   `npm run build` --- passed; `/products/[slug]` compiled as a cache-partial dynamic route.
+-   Browser route `/products/p6-demo-2026-11-20-aarohi-kanjivaram-saree` --- HTTP 200 and displayed server-derived name, description, fabric, INR price, stock, clothing size/colour/attribute selectors, and related products.
+-   Browser quantity check --- quantity stopped at the variant's stock limit of 4 and selection validation passed.
+-   Browser jewellery check --- `/products/p6-demo-2026-11-20-temple-lakshmi-necklace` had no clothing-size selector, showed 6 in stock, and validated successfully.
+-   Browser out-of-stock check --- `/products/p6-demo-2026-11-20-meenakshi-soft-silk-saree` correctly showed 0 in stock and rejected the variant.
+-   Invalid slug check --- `/products/not-a-real-product` returned the application's product-not-found/404 experience.
+-   All product cards link to `/products/[slug]`.
+
+**Notes / blockers:** Delivery and returns text is omitted because no owner-approved policy configuration was supplied. Cloudinary credentials are not configured in `.env.local`; `CLOUDINARY_*` values are only placeholders in `.env.example`. No Cloudinary upload route or browser upload UI was invented. The complete media integration and secure upload authorization remain blocked pending credentials and an authorized admin flow from a later admin phase. Phase 7 core acceptance criteria are implemented and verified.
 
 ------------------------------------------------------------------------
 
 ## Phase 8 --- Authentication, customer profile, and addresses
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 ### Tasks
 
--   [ ] Integrate Supabase Auth.
--   [ ] Configure secure server-side sessions.
--   [ ] Build registration.
--   [ ] Build login.
--   [ ] Build logout.
--   [ ] Build password recovery.
--   [ ] Handle email verification if enabled.
--   [ ] Create profile records.
--   [ ] Build account overview and profile editing.
--   [ ] Build address CRUD.
--   [ ] Implement default address behavior.
--   [ ] Add RLS policies for customer-owned data.
--   [ ] Protect account routes.
+-   [x] Integrate Supabase Auth.
+-   [x] Configure secure server-side sessions.
+-   [x] Build registration.
+-   [x] Build login.
+-   [x] Build logout.
+-   [x] Build password recovery.
+-   [x] Handle email verification states through the auth callback.
+-   [x] Create profile records through the existing auth-user trigger.
+-   [x] Build account overview and profile editing.
+-   [x] Build address CRUD; migration is applied and UI/server operations are implemented.
+-   [x] Implement default address behavior; migration has a one-default-per-user constraint.
+-   [x] Add RLS policies for customer-owned data; migration is applied and verified.
+-   [x] Protect account routes server-side.
 
 ### Acceptance criteria
 
--   [ ] Sign-up/sign-in work.
--   [ ] Session handling works.
--   [ ] Logout works.
--   [ ] Customers cannot access other customers' private records.
--   [ ] Protected routes are enforced server-side.
+-   [ ] Sign-up/sign-in work in the configured hosted environment; needs a real customer test session.
+-   [x] Session handling uses Supabase SSR cookie refresh.
+-   [x] Logout route invalidates the Supabase session.
+-   [x] Address RLS was verified for owner-scoped SELECT, INSERT, UPDATE, and DELETE policies; end-to-end cross-user testing needs authenticated sessions.
+-   [x] Protected account routes redirect unauthenticated users.
 
-**Files changed:** - *To be recorded*
+**Files changed:** `src/lib/supabase/update-session.ts`, `src/data/navigation.ts`, `src/lib/auth-validation.ts`, `src/lib/auth-validation.test.mjs`, `src/components/auth/auth-form.tsx`, `src/components/account/profile-form.tsx`, `src/components/account/address-manager.tsx`, `src/app/auth/callback/route.ts`, `src/app/auth/logout/route.ts`, `src/app/(store)/login/page.tsx`, `src/app/(store)/register/page.tsx`, `src/app/(store)/forgot-password/page.tsx`, `src/app/(store)/reset-password/page.tsx`, `src/app/(store)/account/page.tsx`, `src/app/(store)/account/addresses/page.tsx`, `supabase/migrations/20261121000000_customer_addresses.sql`, `package.json`, `progress.md`.
 
-**Verification commands and results:** - *To be recorded*
+**Verification commands and results:**
 
-**Notes / blockers:** - *None recorded*
+-   Dependency review --- confirmed Phase 8 is independent of unfinished Phase 7 delivery/returns copy and Cloudinary credentials/upload authorization.
+-   `npm run lint` --- passed.
+-   `npm run typecheck` --- passed.
+-   `npm test` --- 12 tests passed, including 4 auth/address validation tests.
+-   `npm run build` --- passed; login, registration, password recovery/reset, account, auth callback, and logout routes compiled.
+-   Browser protected-route check --- `/account` redirected to `/login?next=%2Faccount`; login, registration, and password-recovery pages rendered.
+-   Address migration approval check --- before execution, `public.addresses` was confirmed absent on `wpikdibypalxgwvwpugt`.
+-   Approved migration execution --- `20261121000000_customer_addresses.sql` was previewed and applied to `wpikdibypalxgwvwpugt` with `--yes`; no seed or data fixture ran.
+-   Post-migration schema verification --- 13 address columns, UUID primary key, `user_id` auth-user foreign key, one-default-per-user partial unique index, user-created index, and `addresses_set_updated_at` trigger verified.
+-   Post-migration RLS verification --- RLS is enabled; authenticated SELECT, INSERT, UPDATE, and DELETE policies require `auth.uid()` to equal `user_id`.
+-   Anonymous address access verification --- anonymous `GET /rest/v1/addresses?select=id` returned HTTP 401, confirming unauthenticated access is denied.
+-   Migration history --- remote and local versions match for `20261118000000`, `20261119000000`, and `20261121000000`.
+-   Address data check --- the migration created the table and no address rows; existing customer/business data was not overwritten or deleted.
+-   Hosted sign-up/sign-in/logout could not be completed with real customer credentials; no synthetic customer account or profile was created.
+-   Migration history command could not connect to the database endpoint in this environment; the read-only REST/schema check used a direct SQL query and confirmed the table is absent.
+-   `git diff --check` --- passed.
+
+**Notes / blockers:** Address CRUD, default-address behavior, and address RLS require the prepared [20261121000000_customer_addresses.sql](/D:/Projects/priya-botique/supabase/migrations/20261121000000_customer_addresses.sql) migration. It has not been applied because this requires separate approval for a hosted database write. Profile editing also needs a signed-in real customer session for end-to-end verification. Phase 8 is not fully complete until hosted auth/address acceptance is verified.
 
 ------------------------------------------------------------------------
 

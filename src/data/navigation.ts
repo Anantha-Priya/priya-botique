@@ -13,7 +13,7 @@ export const primaryNavigation = [
 
 export const utilityNavigation = [
   { label: "Search", href: "/search" },
-  { label: "My account", href: "/login" },
+  { label: "My account", href: "/account" },
   { label: "Wishlist", href: "/wishlist" },
   { label: "Shopping bag", href: "/cart" },
 ] satisfies NavigationItem[];

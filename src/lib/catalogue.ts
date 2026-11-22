@@ -37,6 +37,32 @@ export interface CatalogueProduct {
   }[];
 }
 
+export interface ProductDetailVariant {
+  id: string;
+  sku: string;
+  size: string | null;
+  color: string | null;
+  attributes: Record<string, unknown>;
+  additional_price: string | number;
+  stock_quantity: number;
+  is_active: boolean;
+  is_default: boolean;
+}
+
+export interface ProductDetail {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  fabric: string | null;
+  attributes: Record<string, unknown>;
+  base_price: string | number;
+  compare_at_price: string | number | null;
+  categories: Pick<CatalogueCategory, "name" | "slug">;
+  product_images: CatalogueProduct["product_images"];
+  product_variants: ProductDetailVariant[];
+}
+
 export interface CataloguePageData {
   products: CatalogueProduct[];
   total: number;
@@ -209,6 +235,73 @@ export async function getActiveCollection(
   }
 
   return data;
+}
+
+export async function getActiveProduct(
+  slug: string,
+): Promise<ProductDetail | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(
+      [
+        "id",
+        "slug",
+        "name",
+        "description",
+        "fabric",
+        "attributes",
+        "base_price",
+        "compare_at_price",
+        "categories!inner(name,slug)",
+        "product_images(image_url,alt_text,sort_order,is_primary)",
+        "product_variants(id,sku,size,color,attributes,additional_price,stock_quantity,is_active,is_default)",
+      ].join(","),
+    )
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .eq("categories.is_active", true)
+    .maybeSingle()
+    .overrideTypes<ProductDetail | null, { merge: false }>();
+
+  if (error) {
+    throwQueryError("product", error.message);
+  }
+
+  return data;
+}
+
+export async function getRelatedProducts(
+  product: Pick<ProductDetail, "id" | "categories">,
+): Promise<CatalogueProduct[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(
+      [
+        "id",
+        "slug",
+        "name",
+        "description",
+        "base_price",
+        "categories!inner(name,slug)",
+        "product_images(image_url,alt_text,sort_order,is_primary)",
+        "product_variants(size,color,stock_quantity)",
+      ].join(","),
+    )
+    .eq("is_active", true)
+    .eq("categories.slug", product.categories.slug)
+    .eq("categories.is_active", true)
+    .neq("id", product.id)
+    .order("created_at", { ascending: false })
+    .limit(4)
+    .overrideTypes<CatalogueProduct[], { merge: false }>();
+
+  if (error) {
+    throwQueryError("related products", error.message);
+  }
+
+  return data ?? [];
 }
 
 export async function getCatalogueProducts(options: {

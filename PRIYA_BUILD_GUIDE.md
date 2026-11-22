@@ -585,6 +585,14 @@ experience.
 -   Images have alt text and responsive sizing.
 -   Upload secrets remain server-only.
 
+**Implementation status:** The server-derived `/products/[slug]` route, responsive
+gallery, dynamic clothing/non-clothing variants, quantity/stock validation,
+invalid-slug handling, and related products are implemented. Delivery and
+returns copy remains withheld until owner-approved policy configuration exists.
+Cloudinary integration and secure uploads remain blocked until Cloudinary
+credentials and an authorized admin flow are available; no secrets are added
+to browser code.
+
 ------------------------------------------------------------------------
 
 ## Phase 8 --- Authentication, customer profile, and addresses
@@ -615,6 +623,18 @@ experience.
     addresses.
 -   Protected routes redirect or deny access appropriately.
 -   Secrets are not exposed in browser bundles.
+
+**Implementation status:** Phase 8 authentication, profile, password recovery,
+logout, callback, protected-route code, and address management UI are
+implemented. The approved `20261121000000_customer_addresses.sql` migration
+was applied to the original hosted project. No address records were inserted.
+
+**Dependency status:** Phase 8 is independent of the unfinished delivery/returns
+copy and Cloudinary upload tasks in Phase 7. It requires the existing Supabase
+Auth/SSR setup and profile trigger, plus the prepared `addresses` migration.
+The address migration was not applied because hosted database writes require
+separate explicit approval. Until it is applied, the account UI reports address
+storage as pending rather than silently inventing or resetting customer data.
 
 ------------------------------------------------------------------------
 
