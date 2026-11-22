@@ -1,15 +1,25 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import { shippingPolicy } from "@/lib/policy-content";
 
-const placeholderPages: Record<string, { title: string; description: string }> =
-  {
+interface PlaceholderPage {
+  title: string;
+  description: string;
+  sections?: readonly {
+    heading: string;
+    paragraphs: readonly string[];
+  }[];
+}
+
+const placeholderPages: Record<string, PlaceholderPage> = {
     about: {
       title: "About PRIYA",
       description: "The boutique story will be added when its details are provided.",
     },
     contact: {
       title: "Contact",
-      description: "Customer support details will be added when they are provided.",
+      description:
+        "Customer support submissions are not available yet. This page is a placeholder, not a working support channel.",
     },
     search: {
       title: "Search",
@@ -27,10 +37,7 @@ const placeholderPages: Record<string, { title: string; description: string }> =
       title: "Shopping bag",
       description: "Shopping bag features will be available in a later phase.",
     },
-    "policies/shipping": {
-      title: "Shipping & delivery",
-      description: "Shipping details will be published after they are finalized.",
-    },
+    "policies/shipping": shippingPolicy,
     "policies/returns": {
       title: "Returns & exchanges",
       description: "Return details will be published after they are finalized.",
@@ -88,9 +95,26 @@ async function PlaceholderContent({ params }: PlaceholderRouteProps) {
       <p className="mt-4 max-w-2xl text-lg leading-8 text-muted-foreground">
         {page.description}
       </p>
-      <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-        This is a temporary page while the storefront is being built.
-      </p>
+      {page.sections ? (
+        <div className="mt-10 max-w-3xl space-y-8">
+          {page.sections.map((section) => (
+            <section key={section.heading}>
+              <h2 className="font-heading text-2xl font-medium">
+                {section.heading}
+              </h2>
+              <div className="mt-3 space-y-3 text-sm leading-7 text-muted-foreground">
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+          This is a temporary page while the storefront is being built.
+        </p>
+      )}
     </main>
   );
 }

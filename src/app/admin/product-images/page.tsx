@@ -1,11 +1,28 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 import { ProductImageUploader } from "@/components/admin/product-image-uploader";
 import { getAdminContext } from "@/lib/admin/get-admin-context";
 
 export const metadata: Metadata = { title: "Product image uploads" };
 
-export default async function ProductImageAdminPage() {
+export default function ProductImageAdminPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
+          <p role="status" className="text-sm text-muted-foreground">
+            Loading administrator tools...
+          </p>
+        </main>
+      }
+    >
+      <ProductImageAdminContent />
+    </Suspense>
+  );
+}
+
+async function ProductImageAdminContent() {
   const { supabase, user, isAdmin } = await getAdminContext();
 
   if (!user) {

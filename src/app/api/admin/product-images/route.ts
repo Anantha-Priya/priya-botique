@@ -1,12 +1,13 @@
-import { v2 as cloudinary } from "cloudinary";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getAdminContext } from "@/lib/admin/get-admin-context";
+import { isSameSiteRequest } from "@/lib/admin/is-same-site-request";
 import {
   cloudinaryImageFormats,
   cloudinaryMaxImageBytes,
   isValidCloudinaryProductImageId,
 } from "@/lib/cloudinary-upload";
+import { getCloudinaryServerClient } from "@/lib/cloudinary-server";
 
 const requestSchema = z.object({
   productId: z.string().uuid(),
@@ -15,23 +16,8 @@ const requestSchema = z.object({
   altText: z.string().trim().min(1).max(300),
 });
 
-function isAllowedOrigin(request: NextRequest): boolean {
-  const requestOrigin = request.headers.get("origin");
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-
-  if (!requestOrigin || !siteUrl) {
-    return false;
-  }
-
-  try {
-    return new URL(requestOrigin).origin === new URL(siteUrl).origin;
-  } catch {
-    return false;
-  }
-}
-
 export async function POST(request: NextRequest) {
-  if (!isAllowedOrigin(request)) {
+  if (!isSameSiteRequest(request)) {
     return NextResponse.json({ error: "Request origin is not allowed." }, { status: 403 });
   }
 
@@ -54,23 +40,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Uploaded image is not scoped to this product." }, { status: 400 });
   }
 
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-  const apiKey = process.env.CLOUDINARY_API_KEY;
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
-
-  if (!cloudName || !apiKey || !apiSecret) {
+  const cloudinaryConfiguration = getCloudinaryServerClient();
+  if (!cloudinaryConfiguration) {
     return NextResponse.json(
       { error: "Cloudinary server configuration is incomplete." },
       { status: 503 },
     );
   }
 
-  cloudinary.config({
-    cloud_name: cloudName,
-    api_key: apiKey,
-    api_secret: apiSecret,
-    secure: true,
-  });
+  const { client: cloudinary } = cloudinaryConfiguration;
 
   let asset;
   try {
@@ -89,9 +67,8 @@ export async function POST(request: NextRequest) {
     asset.resource_type !== "image" ||
     asset.public_id !== publicId ||
     asset.secure_url !== secureUrl ||
-    !cloudinaryImageFormats.includes(
-      asset.format as (typeof cloudinaryImageFormats)[number],
-    ) ||
+    !cloudinaryImageFormats.some((format) => format === asset.format) ||
+    !Number.isSafeInteger(asset.bytes) ||
     asset.bytes <= 0 ||
     asset.bytes > cloudinaryMaxImageBytes
   ) {

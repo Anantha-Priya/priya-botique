@@ -14,9 +14,7 @@ export function isAllowedCloudinaryImage(file: {
   size: number;
 }): boolean {
   return (
-    cloudinaryImageMimeTypes.includes(
-      file.type as (typeof cloudinaryImageMimeTypes)[number],
-    ) &&
+    cloudinaryImageMimeTypes.some((mimeType) => mimeType === file.type) &&
     file.size > 0 &&
     file.size <= cloudinaryMaxImageBytes
   );

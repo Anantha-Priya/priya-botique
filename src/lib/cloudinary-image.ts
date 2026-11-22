@@ -1,7 +1,7 @@
 const cloudinaryHost = "res.cloudinary.com";
 const deliveryTransform = "f_auto,q_auto,c_limit,w_1600";
 const existingTransformPattern =
-  /^(?:a|ar|b|c|d|e|fl|g|h|l|o|q|r|t|u|w|x|y)_/;
+  /^(?:a|ar|b|c|d|e|f|fl|g|h|l|o|q|r|t|u|w|x|y)_/;
 
 export function optimizeCloudinaryImageUrl(imageUrl: string): string {
   let url: URL;
@@ -19,7 +19,7 @@ export function optimizeCloudinaryImageUrl(imageUrl: string): string {
   const pathParts = url.pathname.split("/");
   const uploadIndex = pathParts.indexOf("upload");
 
-  if (uploadIndex < 0) {
+  if (pathParts[2] !== "image" || uploadIndex < 0) {
     return imageUrl;
   }
 

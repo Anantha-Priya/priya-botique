@@ -587,11 +587,40 @@ experience.
 
 **Implementation status:** The server-derived `/products/[slug]` route, responsive
 gallery, dynamic clothing/non-clothing variants, quantity/stock validation,
-invalid-slug handling, and related products are implemented. Delivery and
-returns copy remains withheld until owner-approved policy configuration exists.
-Cloudinary integration and secure uploads remain blocked until Cloudinary
-credentials and an authorized admin flow are available; no secrets are added
-to browser code.
+invalid-slug handling, related products, Cloudinary signed-upload handlers, and
+an admin upload page are implemented. Upload authorization is checked against
+the signed-in Supabase profile, uploaded assets are verified server-side, and
+Cloudinary delivery URLs receive automatic format/quality transformations.
+The owner-approved Shipping & Delivery policy is published on the storefront
+and summarized on product detail pages. Returns & Exchanges terms and
+return-request instructions remain unpublished until a support-handling method
+is configured and tested. Cloudinary credentials and a signed upload preset
+must be configured and a real upload verified before this phase is complete.
+
+### Cloudinary setup and verification
+
+1. In Cloudinary Console, create an upload preset named
+   `priya-product-images` and configure it for **signed** uploads.
+2. Restrict its allowed formats to JPEG, PNG, WebP, and AVIF and set the maximum
+   file size to 10 MB. Keep the preset's format and size restrictions aligned
+   with the server-side checks.
+3. Add `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`,
+   `CLOUDINARY_API_SECRET`, and `CLOUDINARY_UPLOAD_PRESET` to the ignored local
+   `.env.local` file and to the hosting provider's server environment. Never
+   use a `NEXT_PUBLIC_` prefix for the API secret or share it in chat.
+4. Before any real upload test, obtain explicit owner approval: it creates a
+   Cloudinary asset and inserts a row into `product_images` in the original
+   Supabase project. After approval, restart the local server, sign in with a
+   profile whose `role` is `admin`, and open `/admin/product-images`. Use only
+   the owner-approved test product, then confirm the image is displayed on its
+   product page.
+5. Repeat the test as a non-admin and confirm the page and API requests are
+   denied. Confirm unsupported formats, files over 10 MB, and images not
+   scoped to the selected product are rejected.
+
+The application requests `f_auto,q_auto,c_limit,w_1600` for Cloudinary images;
+other image hosts are left unchanged. This transforms delivery only and does
+not replace or modify uploaded originals.
 
 ------------------------------------------------------------------------
 

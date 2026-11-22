@@ -1,10 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Minus, Plus } from "lucide-react";
 import { useState } from "react";
 import { formatINR } from "@/lib/format-currency";
 import { optimizeCloudinaryImageUrl } from "@/lib/cloudinary-image";
+import { productShippingSummary } from "@/lib/policy-content";
 import {
   findMatchingVariant,
   getAttributeOptions,
@@ -154,6 +156,20 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
         {product.fabric ? (
           <p className="mt-4 text-sm"><strong>Fabric:</strong> {product.fabric}</p>
         ) : null}
+        <aside
+          aria-label="Shipping information"
+          className="mt-6 rounded-lg border border-border p-4"
+        >
+          <p className="text-sm leading-6 text-muted-foreground">
+            {productShippingSummary}
+          </p>
+          <Link
+            href="/policies/shipping"
+            className="mt-2 inline-block text-sm font-medium text-brand-burgundy underline underline-offset-4"
+          >
+            Shipping & delivery details
+          </Link>
+        </aside>
 
         <div className="mt-8 space-y-5">
           {sizeOptions.length > 0 ? (

@@ -396,11 +396,12 @@
 -   [x] Support clothing and non-clothing attributes.
 -   [x] Validate variant selection.
 -   [x] Add quantity control and stock limits.
--   [ ] Add approved delivery/return information.
+-   [x] Publish owner-approved Shipping & Delivery information.
+-   [ ] Publish Returns & Exchanges terms after a support-handling method is configured and tested.
 -   [x] Add related products.
--   [ ] Configure Cloudinary integration; credentials are not present in `.env.local`.
--   [ ] Add secure image upload flow; pending admin authorization.
--   [ ] Validate image type, size, and authorization; pending upload flow.
+-   [ ] Configure the Cloudinary account, signed upload preset, and credentials; owner setup and live verification remain pending.
+-   [x] Add an admin-only signed upload flow with server-side asset verification.
+-   [x] Validate supported image formats, 10 MB maximum size, and product-scoped asset IDs.
 
 ### Acceptance criteria
 
@@ -409,16 +410,20 @@
 -   [x] Products without clothing sizes work.
 -   [x] Quantity respects stock.
 -   [x] Images are responsive and accessible.
--   [ ] Upload secrets remain server-only; no upload flow or secrets are active.
+-   [x] Upload API secrets remain server-only; the browser receives only the public API key and signed upload parameters.
+-   [ ] Verify a credential-backed upload is saved and displayed using the configured Cloudinary account.
+-   [ ] Publish return-request instructions only after Contact Us submissions can be handled.
 
-**Files changed:** `src/app/(store)/products/[slug]/page.tsx`, `src/components/catalogue/product-detail.tsx`, `src/components/catalogue/product-card.tsx`, `src/lib/catalogue.ts`, `src/lib/product-selection.ts`, `src/lib/product-selection.test.mjs`, `package.json`, `progress.md`.
+**Files changed:** Product detail and catalogue files listed above; `src/app/(store)/[...segments]/page.tsx`; `src/app/admin/product-images/page.tsx`; `src/app/api/admin/cloudinary-signature/route.ts`; `src/app/api/admin/product-images/route.ts`; `src/components/admin/product-image-uploader.tsx`; `src/lib/admin/get-admin-context.ts`; `src/lib/admin/is-same-site-request.ts`; `src/lib/cloudinary-image.ts`; `src/lib/cloudinary-server.ts`; `src/lib/cloudinary-upload.ts`; `src/lib/cloudinary-upload.test.mjs`; `src/lib/policy-content.ts`; `.env.example`; `package.json`; and this guide.
 
 **Verification commands and results:**
 
 -   `npm run lint` --- passed.
 -   `npm run typecheck` --- passed.
--   `npm test` --- 8 tests passed.
--   `npm run build` --- passed; `/products/[slug]` compiled as a cache-partial dynamic route.
+-   `npm test` --- 16 tests passed.
+-   `npm run build` --- passed; `/products/[slug]`, `/policies/shipping`, and `/admin/product-images` compiled with the dynamic upload handlers.
+-   Cloudinary unit checks --- delivery transformations, allowed MIME types, maximum upload size, and product-scoped public IDs passed.
+-   Admin/API authorization and a credential-backed Cloudinary upload --- not yet executed; Cloudinary credentials and signed preset are not configured in the workspace.
 -   Browser route `/products/p6-demo-2026-11-20-aarohi-kanjivaram-saree` --- HTTP 200 and displayed server-derived name, description, fabric, INR price, stock, clothing size/colour/attribute selectors, and related products.
 -   Browser quantity check --- quantity stopped at the variant's stock limit of 4 and selection validation passed.
 -   Browser jewellery check --- `/products/p6-demo-2026-11-20-temple-lakshmi-necklace` had no clothing-size selector, showed 6 in stock, and validated successfully.
@@ -426,7 +431,7 @@
 -   Invalid slug check --- `/products/not-a-real-product` returned the application's product-not-found/404 experience.
 -   All product cards link to `/products/[slug]`.
 
-**Notes / blockers:** Delivery and returns text is omitted because no owner-approved policy configuration was supplied. Cloudinary credentials are not configured in `.env.local`; `CLOUDINARY_*` values are only placeholders in `.env.example`. No Cloudinary upload route or browser upload UI was invented. The complete media integration and secure upload authorization remain blocked pending credentials and an authorized admin flow from a later admin phase. Phase 7 core acceptance criteria are implemented and verified.
+**Notes / blockers:** Owner-approved Shipping & Delivery information is published. Returns & Exchanges details and return-request instructions remain unpublished at the owner's direction until a support-handling method is configured and tested; the Contact Us route remains a placeholder, not a working channel. The signed upload flow and administrator UI are implemented, but Cloudinary credentials are blank in the local environment and a signed preset plus a real upload still need verification. Any real upload test requires explicit owner approval because it creates a Cloudinary asset and inserts a `product_images` row in the original Supabase project. No hosted database changes, product-image inserts, Cloudinary uploads, support tables, or third-party providers were added during this work. Phase 7 remains in progress.
 
 ------------------------------------------------------------------------
 

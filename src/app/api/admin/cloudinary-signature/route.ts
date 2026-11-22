@@ -1,34 +1,19 @@
 import { randomUUID } from "node:crypto";
-import { v2 as cloudinary } from "cloudinary";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getAdminContext } from "@/lib/admin/get-admin-context";
+import { isSameSiteRequest } from "@/lib/admin/is-same-site-request";
 import {
-  cloudinaryUploadPreset,
   isValidCloudinaryProductImageId,
 } from "@/lib/cloudinary-upload";
+import { getCloudinaryServerClient } from "@/lib/cloudinary-server";
 
 const requestSchema = z.object({
   productId: z.string().uuid(),
 });
 
-function isAllowedOrigin(request: NextRequest): boolean {
-  const requestOrigin = request.headers.get("origin");
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-
-  if (!requestOrigin || !siteUrl) {
-    return false;
-  }
-
-  try {
-    return new URL(requestOrigin).origin === new URL(siteUrl).origin;
-  } catch {
-    return false;
-  }
-}
-
 export async function POST(request: NextRequest) {
-  if (!isAllowedOrigin(request)) {
+  if (!isSameSiteRequest(request)) {
     return NextResponse.json({ error: "Request origin is not allowed." }, { status: 403 });
   }
 
@@ -59,30 +44,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "The selected product was not found." }, { status: 404 });
   }
 
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-  const apiKey = process.env.CLOUDINARY_API_KEY;
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
-  const uploadPreset =
-    process.env.CLOUDINARY_UPLOAD_PRESET ?? cloudinaryUploadPreset;
-
-  if (!cloudName || !apiKey || !apiSecret) {
+  const cloudinaryConfiguration = getCloudinaryServerClient();
+  if (!cloudinaryConfiguration) {
     return NextResponse.json(
       { error: "Cloudinary server configuration is incomplete." },
       { status: 503 },
     );
   }
 
+  const { client: cloudinary, cloudName, apiKey, apiSecret, uploadPreset } =
+    cloudinaryConfiguration;
   const publicId = `priya-products/${product.id}/${randomUUID().replaceAll("-", "")}`;
   if (!isValidCloudinaryProductImageId(publicId, product.id)) {
     throw new Error("Generated Cloudinary public ID was invalid.");
   }
-
-  cloudinary.config({
-    cloud_name: cloudName,
-    api_key: apiKey,
-    api_secret: apiSecret,
-    secure: true,
-  });
 
   const paramsToSign = {
     overwrite: false,
