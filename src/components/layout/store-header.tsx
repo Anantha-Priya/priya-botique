@@ -7,16 +7,16 @@ import { brand } from "@/lib/brand";
 export function StoreHeader() {
   return (
     <header className="border-b border-border bg-background">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-3 sm:gap-3 sm:px-6 lg:px-8">
         <Link
           href="/"
           aria-label={`${brand.name} Boutique home`}
           className="shrink-0 rounded-sm text-foreground transition-colors hover:text-primary"
         >
-          <span className="block font-heading text-2xl leading-none tracking-wide">
+          <span className="block font-heading text-3xl italic leading-none tracking-[0.12em] text-brand-burgundy">
             {brand.name}
           </span>
-          <span className="mt-1 block text-[0.625rem] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          <span className="mt-1 block text-[0.625rem] font-medium uppercase tracking-[0.28em] text-muted-foreground">
             Boutique
           </span>
         </Link>

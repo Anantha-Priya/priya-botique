@@ -16,7 +16,7 @@ export function HeaderUtilityActions() {
   const wishlistCount = isClient ? wishlistItemsCount : 0;
 
   return (
-    <div className="flex shrink-0 items-center gap-1">
+    <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
       {/* Search */}
       <Link
         href="/search"
@@ -39,7 +39,7 @@ export function HeaderUtilityActions() {
       <Link
         href="/wishlist"
         aria-label={`Wishlist (${wishlistCount} ${wishlistCount === 1 ? "item" : "items"})`}
-        className="relative hidden size-11 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary hover:text-primary sm:inline-flex"
+        className="relative inline-flex size-11 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary hover:text-primary"
       >
         <Heart aria-hidden="true" className="size-5" />
         {wishlistCount > 0 ? (

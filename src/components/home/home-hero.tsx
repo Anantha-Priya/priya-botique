@@ -102,7 +102,7 @@ export function HomeHero() {
       <div className="relative z-10 mx-auto flex min-h-[calc(100svh-8rem)] max-w-7xl items-center px-5 pt-14 pb-24 sm:px-8 lg:px-14">
         <div className="max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#f4d8a4]">
-            PRIYA · A SOUTH INDIAN BOUTIQUE PREVIEW
+             PRIYA · A SOUTH INDIAN BOUTIQUE
           </p>
           <h1
             id="home-hero-title"
