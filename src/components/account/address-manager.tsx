@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { addressSchema } from "@/lib/auth-validation";
 
@@ -30,6 +30,7 @@ export function AddressManager({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -108,9 +109,10 @@ export function AddressManager({
           ),
         ]);
       }
+      const wasEditing = Boolean(editing);
       setEditing(null);
-      setMessage("Address saved.");
-      event.currentTarget.reset();
+      setMessage(wasEditing ? "Address updated." : "Address saved.");
+      formRef.current?.reset();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to save address.");
     } finally {
@@ -131,6 +133,9 @@ export function AddressManager({
       setError(deleteError.message);
     } else {
       setAddresses((current) => current.filter((item) => item.id !== address.id));
+      if (editing?.id === address.id) {
+        setEditing(null);
+      }
       setMessage("Address deleted.");
     }
     setPending(false);
@@ -159,8 +164,25 @@ export function AddressManager({
                     <p className="mt-1 text-muted-foreground">{address.phone}</p>
                   </div>
                   <div className="grid gap-2">
-                    <button type="button" onClick={() => setEditing(address)} className="text-brand-burgundy underline">Edit</button>
-                    <button type="button" disabled={pending} onClick={() => removeAddress(address)} className="text-red-700 underline">Delete</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditing(address);
+                        setError("");
+                        setMessage("");
+                      }}
+                      className="text-brand-burgundy underline"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => removeAddress(address)}
+                      className="text-red-700 underline"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               </li>
@@ -171,30 +193,100 @@ export function AddressManager({
 
       <section>
         <h2 className="font-heading text-2xl font-medium">{editing ? "Edit address" : "Add address"}</h2>
-        <form onSubmit={submit} className="mt-4 grid gap-3">
-          <input name="fullName" defaultValue={editing?.full_name ?? ""} key={editing?.id ?? "new-name"} placeholder="Full name" required className="min-h-11 rounded-md border border-border px-3" />
-          <input name="phone" defaultValue={editing?.phone ?? ""} key={editing?.id ?? "new-phone"} placeholder="Phone" required className="min-h-11 rounded-md border border-border px-3" />
-          <input name="line1" defaultValue={editing?.line1 ?? ""} key={editing?.id ?? "new-line1"} placeholder="Address line 1" required className="min-h-11 rounded-md border border-border px-3" />
-          <input name="line2" defaultValue={editing?.line2 ?? ""} key={editing?.id ?? "new-line2"} placeholder="Address line 2 (optional)" className="min-h-11 rounded-md border border-border px-3" />
+        <form
+          ref={formRef}
+          key={editing ? editing.id : "new-address"}
+          onSubmit={submit}
+          className="mt-4 grid gap-3"
+        >
+          <input
+            name="fullName"
+            defaultValue={editing?.full_name ?? ""}
+            placeholder="Full name"
+            required
+            className="min-h-11 rounded-md border border-border px-3"
+          />
+          <input
+            name="phone"
+            defaultValue={editing?.phone ?? ""}
+            placeholder="Phone"
+            required
+            className="min-h-11 rounded-md border border-border px-3"
+          />
+          <input
+            name="line1"
+            defaultValue={editing?.line1 ?? ""}
+            placeholder="Address line 1"
+            required
+            className="min-h-11 rounded-md border border-border px-3"
+          />
+          <input
+            name="line2"
+            defaultValue={editing?.line2 ?? ""}
+            placeholder="Address line 2 (optional)"
+            className="min-h-11 rounded-md border border-border px-3"
+          />
           <div className="grid grid-cols-2 gap-3">
-            <input name="city" defaultValue={editing?.city ?? ""} key={editing?.id ?? "new-city"} placeholder="City" required className="min-h-11 rounded-md border border-border px-3" />
-            <input name="state" defaultValue={editing?.state ?? ""} key={editing?.id ?? "new-state"} placeholder="State" required className="min-h-11 rounded-md border border-border px-3" />
+            <input
+              name="city"
+              defaultValue={editing?.city ?? ""}
+              placeholder="City"
+              required
+              className="min-h-11 rounded-md border border-border px-3"
+            />
+            <input
+              name="state"
+              defaultValue={editing?.state ?? ""}
+              placeholder="State"
+              required
+              className="min-h-11 rounded-md border border-border px-3"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <input name="postalCode" defaultValue={editing?.postal_code ?? ""} key={editing?.id ?? "new-postal"} placeholder="Postal code" required className="min-h-11 rounded-md border border-border px-3" />
-            <input name="country" defaultValue={editing?.country ?? "India"} key={editing?.id ?? "new-country"} placeholder="Country" required className="min-h-11 rounded-md border border-border px-3" />
+            <input
+              name="postalCode"
+              defaultValue={editing?.postal_code ?? ""}
+              placeholder="Postal code"
+              required
+              className="min-h-11 rounded-md border border-border px-3"
+            />
+            <input
+              name="country"
+              defaultValue={editing?.country ?? "India"}
+              placeholder="Country"
+              required
+              className="min-h-11 rounded-md border border-border px-3"
+            />
           </div>
           <label className="flex items-center gap-2 text-sm">
-            <input name="isDefault" type="checkbox" defaultChecked={editing?.is_default ?? addresses.length === 0} />
+            <input
+              name="isDefault"
+              type="checkbox"
+              defaultChecked={editing ? editing.is_default : addresses.length === 0}
+            />
             Make default address
           </label>
           {error ? <p role="alert" className="text-sm text-red-700">{error}</p> : null}
           {message ? <p role="status" className="text-sm text-green-700">{message}</p> : null}
-          <button type="submit" disabled={pending || migrationPending} className="min-h-11 rounded-md bg-brand-burgundy px-5 text-sm font-semibold text-white disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={pending || migrationPending}
+            className="min-h-11 rounded-md bg-brand-burgundy px-5 text-sm font-semibold text-white disabled:opacity-60"
+          >
             {editing ? "Save address" : "Add address"}
           </button>
           {editing ? (
-            <button type="button" onClick={() => setEditing(null)} className="text-sm text-brand-burgundy underline">Cancel editing</button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setError("");
+                setMessage("");
+              }}
+              className="text-sm text-brand-burgundy underline"
+            >
+              Cancel editing
+            </button>
           ) : null}
         </form>
       </section>

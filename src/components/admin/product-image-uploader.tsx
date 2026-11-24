@@ -4,7 +4,6 @@ import { useRef, useState, type FormEvent } from "react";
 import {
   cloudinaryImageMimeTypes,
   cloudinaryMaxImageBytes,
-  isAllowedCloudinaryImage,
 } from "@/lib/cloudinary-upload";
 
 interface ProductOption {
@@ -52,8 +51,24 @@ export function ProductImageUploader({ products }: { products: ProductOption[] }
     setMessage("");
 
     const file = fileInput.current?.files?.[0];
-    if (!file || !isAllowedCloudinaryImage(file)) {
-      setMessage("Choose a JPEG, PNG, WebP, or AVIF image up to 10 MB.");
+    if (!file) {
+      setMessage("Please choose an image file before uploading.");
+      return;
+    }
+    if (!cloudinaryImageMimeTypes.some((t) => t === file.type)) {
+      setMessage(
+        `"${file.name}" is not a supported format. Please choose a JPEG, PNG, WebP, or AVIF image.`,
+      );
+      return;
+    }
+    if (file.size > cloudinaryMaxImageBytes) {
+      setMessage(
+        `"${file.name}" exceeds the ${cloudinaryMaxImageBytes / 1024 / 1024} MB file size limit. Please choose a smaller image.`,
+      );
+      return;
+    }
+    if (file.size <= 0) {
+      setMessage("The selected file appears to be empty. Please choose a valid image.");
       return;
     }
 

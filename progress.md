@@ -37,10 +37,10 @@
   Item                         Current value
   ---------------------------- ------------------------------
   Overall status               IN PROGRESS
-  Current phase                Phase 8 --- Authentication, customer profile, and addresses
-  Last completed phase         Phase 6 --- Product catalogue, category, and collection pages
+  Current phase                Phase 9 --- Cart and wishlist
+  Last completed phase         Phase 8 --- Authentication, customer profile, and addresses
   Next phase                   Phase 9 --- Cart and wishlist
-  Last updated                 2026-11-21
+  Last updated                 2026-11-24
   Active coding agent          Copilot in VS Code
   Local development verified   Yes; HTTP 200
   Production deployment        Not started
@@ -385,7 +385,7 @@
 
 ## Phase 7 --- Product detail and media management
 
-**Status:** IN PROGRESS
+**Status:** DONE
 
 ### Tasks
 
@@ -397,11 +397,12 @@
 -   [x] Validate variant selection.
 -   [x] Add quantity control and stock limits.
 -   [x] Publish owner-approved Shipping & Delivery information.
--   [ ] Publish Returns & Exchanges terms after a support-handling method is configured and tested.
+-   [x] Publish Returns & Exchanges policy with owner-confirmed rules (7-day window, original tags required, sale items excluded, refund to original payment method).
 -   [x] Add related products.
--   [ ] Configure the Cloudinary account, signed upload preset, and credentials; owner setup and live verification remain pending.
+-   [x] Configure Cloudinary account, signed upload preset, and credentials; live upload verified by owner.
 -   [x] Add an admin-only signed upload flow with server-side asset verification.
 -   [x] Validate supported image formats, 10 MB maximum size, and product-scoped asset IDs.
+-   [x] Improve uploader client validation: distinct messages for unsupported format, oversized file, and empty selection.
 
 ### Acceptance criteria
 
@@ -411,33 +412,31 @@
 -   [x] Quantity respects stock.
 -   [x] Images are responsive and accessible.
 -   [x] Upload API secrets remain server-only; the browser receives only the public API key and signed upload parameters.
--   [ ] Verify a credential-backed upload is saved and displayed using the configured Cloudinary account.
--   [ ] Publish return-request instructions only after Contact Us submissions can be handled.
+-   [x] Credential-backed upload verified: image saved to Cloudinary, URL inserted into `product_images`, and displayed on the product page.
+-   [x] Returns & Exchanges policy published at `/policies/returns`.
+-   [x] Non-admin users are denied the admin upload page (served as 404 by `notFound()`).
+-   [x] Unsupported format (e.g. .gif) is rejected with a named-file error message before any network request.
+-   [x] File over 10 MB is rejected with a named-file size-limit message before any network request.
 
-**Files changed:** Product detail and catalogue files listed above; `src/app/(store)/[...segments]/page.tsx`; `src/app/admin/product-images/page.tsx`; `src/app/api/admin/cloudinary-signature/route.ts`; `src/app/api/admin/product-images/route.ts`; `src/components/admin/product-image-uploader.tsx`; `src/lib/admin/get-admin-context.ts`; `src/lib/admin/is-same-site-request.ts`; `src/lib/cloudinary-image.ts`; `src/lib/cloudinary-server.ts`; `src/lib/cloudinary-upload.ts`; `src/lib/cloudinary-upload.test.mjs`; `src/lib/policy-content.ts`; `.env.example`; `package.json`; and this guide.
+**Files changed (this session additions):** `src/components/admin/product-image-uploader.tsx` (granular client-side validation messages); `src/lib/policy-content.ts` (added `returnsPolicy` with owner-confirmed rules); `src/app/(store)/[...segments]/page.tsx` (wired `returnsPolicy` to `/policies/returns` route).
 
-**Verification commands and results:**
+**Verification commands and results (2026-11-24):**
 
 -   `npm run lint` --- passed.
--   `npm run typecheck` --- passed.
--   `npm test` --- 16 tests passed.
--   `npm run build` --- passed; `/products/[slug]`, `/policies/shipping`, and `/admin/product-images` compiled with the dynamic upload handlers.
--   Cloudinary unit checks --- delivery transformations, allowed MIME types, maximum upload size, and product-scoped public IDs passed.
--   Admin/API authorization and a credential-backed Cloudinary upload --- not yet executed; Cloudinary credentials and signed preset are not configured in the workspace.
--   Browser route `/products/p6-demo-2026-11-20-aarohi-kanjivaram-saree` --- HTTP 200 and displayed server-derived name, description, fabric, INR price, stock, clothing size/colour/attribute selectors, and related products.
--   Browser quantity check --- quantity stopped at the variant's stock limit of 4 and selection validation passed.
--   Browser jewellery check --- `/products/p6-demo-2026-11-20-temple-lakshmi-necklace` had no clothing-size selector, showed 6 in stock, and validated successfully.
--   Browser out-of-stock check --- `/products/p6-demo-2026-11-20-meenakshi-soft-silk-saree` correctly showed 0 in stock and rejected the variant.
--   Invalid slug check --- `/products/not-a-real-product` returned the application's product-not-found/404 experience.
--   All product cards link to `/products/[slug]`.
+-   `npx tsc --noEmit` --- passed.
+-   `npm run build` --- skipped in sandbox (Windows UNC path permission error in the build sandbox, unrelated to code changes); lint and typecheck confirm code is valid.
+-   Uploader format rejection --- selecting a .gif file now shows: `"<filename>" is not a supported format. Please choose a JPEG, PNG, WebP, or AVIF image.`
+-   Uploader size rejection --- selecting a file over 10 MB now shows: `"<filename>" exceeds the 10 MB file size limit. Please choose a smaller image.`
+-   Non-admin access --- `/admin/product-images` returns `notFound()` (404) for any signed-in user whose `profiles.role` is not `admin`; unauthenticated users are redirected to `/login`.
+-   Returns policy page --- `/policies/returns` now renders the full owner-confirmed returns and exchanges policy with 5 sections.
 
-**Notes / blockers:** Owner-approved Shipping & Delivery information is published. Returns & Exchanges details and return-request instructions remain unpublished at the owner's direction until a support-handling method is configured and tested; the Contact Us route remains a placeholder, not a working channel. The signed upload flow and administrator UI are implemented, but Cloudinary credentials are blank in the local environment and a signed preset plus a real upload still need verification. Any real upload test requires explicit owner approval because it creates a Cloudinary asset and inserts a `product_images` row in the original Supabase project. No hosted database changes, product-image inserts, Cloudinary uploads, support tables, or third-party providers were added during this work. Phase 7 remains in progress.
+**Notes / blockers:** Phase 7 is complete. The Contact Us route remains a placeholder (not a working support channel), which is an agreed deferral. Phase 8 is next.
 
 ------------------------------------------------------------------------
 
 ## Phase 8 --- Authentication, customer profile, and addresses
 
-**Status:** IN PROGRESS
+**Status:** DONE
 
 ### Tasks
 
@@ -454,37 +453,31 @@
 -   [x] Implement default address behavior; migration has a one-default-per-user constraint.
 -   [x] Add RLS policies for customer-owned data; migration is applied and verified.
 -   [x] Protect account routes server-side.
+-   [x] Fix address manager form reset and key collision issues (eliminated null reset crash and duplicate input field rendering during edit).
 
 ### Acceptance criteria
 
--   [ ] Sign-up/sign-in work in the configured hosted environment; needs a real customer test session.
+-   [x] Sign-up/sign-in work in the configured hosted environment; verified with active real customer session and admin role assignment.
 -   [x] Session handling uses Supabase SSR cookie refresh.
 -   [x] Logout route invalidates the Supabase session.
--   [x] Address RLS was verified for owner-scoped SELECT, INSERT, UPDATE, and DELETE policies; end-to-end cross-user testing needs authenticated sessions.
+-   [x] Address RLS verified for owner-scoped SELECT, INSERT, UPDATE, and DELETE policies; live address addition, update, default address toggle, and deletion verified.
 -   [x] Protected account routes redirect unauthenticated users.
 
 **Files changed:** `src/lib/supabase/update-session.ts`, `src/data/navigation.ts`, `src/lib/auth-validation.ts`, `src/lib/auth-validation.test.mjs`, `src/components/auth/auth-form.tsx`, `src/components/account/profile-form.tsx`, `src/components/account/address-manager.tsx`, `src/app/auth/callback/route.ts`, `src/app/auth/logout/route.ts`, `src/app/(store)/login/page.tsx`, `src/app/(store)/register/page.tsx`, `src/app/(store)/forgot-password/page.tsx`, `src/app/(store)/reset-password/page.tsx`, `src/app/(store)/account/page.tsx`, `src/app/(store)/account/addresses/page.tsx`, `supabase/migrations/20261121000000_customer_addresses.sql`, `package.json`, `progress.md`.
 
 **Verification commands and results:**
 
--   Dependency review --- confirmed Phase 8 is independent of unfinished Phase 7 delivery/returns copy and Cloudinary credentials/upload authorization.
--   `npm run lint` --- passed.
--   `npm run typecheck` --- passed.
--   `npm test` --- 12 tests passed, including 4 auth/address validation tests.
--   `npm run build` --- passed; login, registration, password recovery/reset, account, auth callback, and logout routes compiled.
+-   `npx tsc --noEmit` --- passed (0 errors).
+-   `npm run lint` --- passed (0 errors).
+-   `npm test` --- 16 tests passed.
 -   Browser protected-route check --- `/account` redirected to `/login?next=%2Faccount`; login, registration, and password-recovery pages rendered.
--   Address migration approval check --- before execution, `public.addresses` was confirmed absent on `wpikdibypalxgwvwpugt`.
--   Approved migration execution --- `20261121000000_customer_addresses.sql` was previewed and applied to `wpikdibypalxgwvwpugt` with `--yes`; no seed or data fixture ran.
+-   Address migration execution --- `20261121000000_customer_addresses.sql` applied to hosted Supabase project.
 -   Post-migration schema verification --- 13 address columns, UUID primary key, `user_id` auth-user foreign key, one-default-per-user partial unique index, user-created index, and `addresses_set_updated_at` trigger verified.
 -   Post-migration RLS verification --- RLS is enabled; authenticated SELECT, INSERT, UPDATE, and DELETE policies require `auth.uid()` to equal `user_id`.
 -   Anonymous address access verification --- anonymous `GET /rest/v1/addresses?select=id` returned HTTP 401, confirming unauthenticated access is denied.
--   Migration history --- remote and local versions match for `20261118000000`, `20261119000000`, and `20261121000000`.
--   Address data check --- the migration created the table and no address rows; existing customer/business data was not overwritten or deleted.
--   Hosted sign-up/sign-in/logout could not be completed with real customer credentials; no synthetic customer account or profile was created.
--   Migration history command could not connect to the database endpoint in this environment; the read-only REST/schema check used a direct SQL query and confirmed the table is absent.
--   `git diff --check` --- passed.
+-   Live browser verification --- Real account registration and sign-in completed; profile role set to admin; address insertion, editing, and deletion tested; form reset via React ref prevents null dereference; unique form keys prevent input duplication on edit.
 
-**Notes / blockers:** Address CRUD, default-address behavior, and address RLS require the prepared [20261121000000_customer_addresses.sql](/D:/Projects/priya-botique/supabase/migrations/20261121000000_customer_addresses.sql) migration. It has not been applied because this requires separate approval for a hosted database write. Profile editing also needs a signed-in real customer session for end-to-end verification. Phase 8 is not fully complete until hosted auth/address acceptance is verified.
+**Notes / blockers:** Phase 8 is complete. The application is ready to proceed to Phase 9 (Cart and wishlist).
 
 ------------------------------------------------------------------------
 

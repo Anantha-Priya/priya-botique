@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { shippingPolicy } from "@/lib/policy-content";
+import { shippingPolicy, returnsPolicy } from "@/lib/policy-content";
 
 interface PlaceholderPage {
   title: string;
@@ -38,10 +38,7 @@ const placeholderPages: Record<string, PlaceholderPage> = {
       description: "Shopping bag features will be available in a later phase.",
     },
     "policies/shipping": shippingPolicy,
-    "policies/returns": {
-      title: "Returns & exchanges",
-      description: "Return details will be published after they are finalized.",
-    },
+    "policies/returns": returnsPolicy,
     "policies/privacy": {
       title: "Privacy policy",
       description: "The privacy policy will be published after it is finalized.",
