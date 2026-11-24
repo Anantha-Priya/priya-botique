@@ -1,20 +1,8 @@
 import Link from "next/link";
-import { Heart, Search, ShoppingBag, UserRound } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { MobileNavigation } from "@/components/layout/mobile-navigation";
+import { HeaderUtilityActions } from "@/components/layout/header-utility-actions";
 import { NavigationLink } from "@/components/layout/navigation-link";
-import { primaryNavigation, utilityNavigation } from "@/data/navigation";
+import { primaryNavigation } from "@/data/navigation";
 import { brand } from "@/lib/brand";
-import { cn } from "@/lib/utils";
-
-type UtilityNavigationLabel = (typeof utilityNavigation)[number]["label"];
-
-const utilityIcons: Record<UtilityNavigationLabel, LucideIcon> = {
-  Search,
-  "My account": UserRound,
-  Wishlist: Heart,
-  "Shopping bag": ShoppingBag,
-};
 
 export function StoreHeader() {
   return (
@@ -46,28 +34,7 @@ export function StoreHeader() {
           ))}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-1">
-          {utilityNavigation.map((item) => {
-            const Icon = utilityIcons[item.label];
-            const hideOnSmallScreens =
-              item.label === "My account" || item.label === "Wishlist";
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-label={item.label}
-                className={cn(
-                  "inline-flex size-11 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary hover:text-primary",
-                  hideOnSmallScreens && "hidden sm:inline-flex",
-                )}
-              >
-                <Icon aria-hidden="true" className="size-5" />
-              </Link>
-            );
-          })}
-          <MobileNavigation />
-        </div>
+        <HeaderUtilityActions />
       </div>
     </header>
   );

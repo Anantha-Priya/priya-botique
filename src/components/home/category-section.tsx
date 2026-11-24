@@ -24,8 +24,7 @@ export function CategorySection() {
             </h2>
           </div>
           <p className="max-w-md text-sm leading-6 text-muted-foreground sm:text-base">
-            Browse the three sides of the PRIYA preview. Category pages are
-            placeholders until the catalogue is ready.
+             &quot; Explore beautiful finds that bring a little more charm to every day &quot;.
           </p>
         </div>
 

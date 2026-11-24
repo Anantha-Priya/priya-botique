@@ -25,18 +25,6 @@ const placeholderPages: Record<string, PlaceholderPage> = {
       title: "Search",
       description: "Product search will be available after the catalogue is added.",
     },
-    login: {
-      title: "My account",
-      description: "Customer accounts will be available in a later phase.",
-    },
-    wishlist: {
-      title: "Wishlist",
-      description: "Wishlist features will be available in a later phase.",
-    },
-    cart: {
-      title: "Shopping bag",
-      description: "Shopping bag features will be available in a later phase.",
-    },
     "policies/shipping": shippingPolicy,
     "policies/returns": returnsPolicy,
     "policies/privacy": {

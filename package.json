@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/format-currency.test.mjs src/lib/catalogue-filters.test.mjs src/lib/product-selection.test.mjs src/lib/auth-validation.test.mjs src/lib/cloudinary-upload.test.mjs"
+    "test": "node --experimental-strip-types --test src/lib/format-currency.test.mjs src/lib/catalogue-filters.test.mjs src/lib/product-selection.test.mjs src/lib/auth-validation.test.mjs src/lib/cloudinary-upload.test.mjs src/lib/cart-logic.test.mjs src/lib/wishlist-logic.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

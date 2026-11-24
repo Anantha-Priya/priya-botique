@@ -4,6 +4,7 @@ export interface CatalogueFilters {
   category: string;
   minPrice?: number;
   maxPrice?: number;
+  priceRange: string;
   size: string;
   color: string;
   attribute: string;
@@ -40,6 +41,13 @@ function cleanText(value: string | undefined, maxLength: number): string {
   return value?.trim().slice(0, maxLength) ?? "";
 }
 
+const priceRanges: Record<string, { min?: number; max?: number }> = {
+  "0-5000": { min: 0, max: 5000 },
+  "5000-10000": { min: 5000, max: 10000 },
+  "10000-15000": { min: 10000, max: 15000 },
+  "15000-25000": { min: 15000, max: 25000 },
+  "25000-": { min: 25000 },
+};
 function parsePrice(value: string | undefined): number | undefined {
   if (!value || !/^\d+(?:\.\d{1,2})?$/.test(value)) {
     return undefined;
@@ -58,12 +66,21 @@ export function parseCatalogueFilters(
     ? Number(pageValue)
     : 1;
 
+  const priceRangeValue = firstValue(params.priceRange);
+  const priceRange =
+    priceRangeValue && Object.prototype.hasOwnProperty.call(priceRanges, priceRangeValue)
+      ? priceRangeValue
+      : "";
+
+  const range = priceRange ? priceRanges[priceRange] : undefined;
+
   return {
     category: cleanText(firstValue(params.category), 80).match(slugPattern)
       ? cleanText(firstValue(params.category), 80)
       : "",
-    minPrice: parsePrice(firstValue(params.minPrice)),
-    maxPrice: parsePrice(firstValue(params.maxPrice)),
+    minPrice: range ? range.min : parsePrice(firstValue(params.minPrice)),
+    maxPrice: range ? range.max : parsePrice(firstValue(params.maxPrice)),
+    priceRange,
     size: cleanText(firstValue(params.size), 40),
     color: cleanText(firstValue(params.color), 40),
     attribute: allowedAttributes.has(firstValue(params.attribute) ?? "")
@@ -90,11 +107,10 @@ export function buildCatalogueHref(
   const params = new URLSearchParams();
 
   if (filters.category) params.set("category", filters.category);
-  if (filters.minPrice !== undefined) {
-    params.set("minPrice", String(filters.minPrice));
-  }
-  if (filters.maxPrice !== undefined) {
-    params.set("maxPrice", String(filters.maxPrice));
+  if (filters.priceRange) params.set("priceRange", filters.priceRange);
+  else {
+    if (filters.minPrice !== undefined) params.set("minPrice", String(filters.minPrice));
+    if (filters.maxPrice !== undefined) params.set("maxPrice", String(filters.maxPrice));
   }
   if (filters.size) params.set("size", filters.size);
   if (filters.color) params.set("color", filters.color);

@@ -7,6 +7,8 @@ import { useState } from "react";
 import { formatINR } from "@/lib/format-currency";
 import { optimizeCloudinaryImageUrl } from "@/lib/cloudinary-image";
 import { productShippingSummary } from "@/lib/policy-content";
+import { useCartStore } from "@/stores/cart-store";
+import { WishlistButton } from "@/components/catalogue/wishlist-button";
 import {
   findMatchingVariant,
   getAttributeOptions,
@@ -65,7 +67,9 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
       first.sort_order - second.sort_order,
   );
 
-  function validateSelection() {
+  const addItem = useCartStore((state) => state.addItem);
+
+  function handleAddToCart() {
     if (!selectedVariant) {
       setMessage("Please select an available variant.");
       return;
@@ -76,11 +80,33 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
     }
     if (quantity > selectedVariant.stock_quantity) {
       setMessage(
-        `Only ${selectedVariant.stock_quantity} item${selectedVariant.stock_quantity === 1 ? "" : "s"} are available.`,
+        `Only ${selectedVariant.stock_quantity} item${selectedVariant.stock_quantity === 1 ? "" : "s"} available.`,
       );
       return;
     }
-    setMessage("Selection validated. Shopping bag will be available in a later phase.");
+
+    const primaryImage = sortedImages[0]?.image_url ?? selectedImage ?? "";
+    const primaryAlt = sortedImages[0]?.alt_text ?? product.name;
+
+    const feedback = addItem({
+      productId: product.id,
+      productSlug: product.slug,
+      productName: product.name,
+      categoryName: product.categories.name,
+      imageUrl: primaryImage,
+      imageAlt: primaryAlt,
+      variantId: selectedVariant.id,
+      selectedSize: selectedVariant.size,
+      selectedColor: selectedVariant.color,
+      selectedAttributes: Object.fromEntries(
+        Object.entries(selectedVariant.attributes).map(([k, v]) => [k, String(v)]),
+      ),
+      unitPrice: effectivePrice,
+      quantity,
+      stockLimit: selectedVariant.stock_quantity,
+    });
+
+    setMessage(feedback.message);
   }
 
   return (
@@ -269,15 +295,41 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={validateSelection}
-            className="min-h-12 w-full rounded-md bg-brand-burgundy px-5 text-sm font-semibold text-white hover:bg-brand-burgundy/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
-            Validate selection
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={stock <= 0}
+              className="min-h-12 flex-1 rounded-md bg-brand-burgundy px-5 text-sm font-semibold text-white hover:bg-brand-burgundy/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {stock <= 0 ? "Out of stock" : "Add to shopping bag"}
+            </button>
+            <WishlistButton
+              item={{
+                productId: product.id,
+                productSlug: product.slug,
+                productName: product.name,
+                categoryName: product.categories.name,
+                imageUrl: sortedImages[0]?.image_url ?? selectedImage ?? "",
+                imageAlt: sortedImages[0]?.alt_text ?? product.name,
+                basePrice: Number(product.base_price),
+                inStock: stock > 0,
+              }}
+              showText
+            />
+          </div>
           {message ? (
-            <p role="status" className="text-sm text-muted-foreground">{message}</p>
+            <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-brand-beige/50 p-3 text-sm">
+              <p role="status" className="font-medium text-foreground">{message}</p>
+              {message.includes("bag") ? (
+                <Link
+                  href="/cart"
+                  className="font-semibold text-brand-burgundy underline hover:text-brand-burgundy/80"
+                >
+                  View bag
+                </Link>
+              ) : null}
+            </div>
           ) : null}
         </div>
       </section>

@@ -1,11 +1,9 @@
 import type { NavigationItem } from "@/types/store";
 
 export const primaryNavigation = [
-  { label: "Shop", href: "/shop" },
   { label: "Clothing", href: "/category/clothing" },
   { label: "Jewellery", href: "/category/jewellery" },
   { label: "Accessories", href: "/category/accessories" },
-  { label: "Collections", href: "/collections" },
   { label: "New arrivals", href: "/new-arrivals" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },

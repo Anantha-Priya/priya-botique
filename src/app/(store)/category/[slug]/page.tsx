@@ -60,11 +60,10 @@ async function CategoryCatalogue({
       categorySlug={category.slug}
       searchParams={filters}
       showCategoryFilter={false}
-      breadcrumbs={[
-        { label: "Home", href: "/" },
-        { label: "Shop", href: "/shop" },
-        { label: category.name },
-      ]}
+       breadcrumbs={[
+         { label: "Home", href: "/" },
+         { label: category.name },
+       ]}
     />
   );
 }

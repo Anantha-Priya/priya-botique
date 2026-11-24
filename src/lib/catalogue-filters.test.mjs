@@ -22,6 +22,7 @@ test("catalogue filters validate values and use the first repeated parameter", (
     category: "clothing",
     minPrice: 12.5,
     maxPrice: undefined,
+    priceRange: "",
     size: "",
     color: "Maroon",
     attribute: "material",

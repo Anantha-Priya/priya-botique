@@ -49,12 +49,11 @@ async function ProductContent({ params }: ProductPageProps) {
     <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
       <Breadcrumbs
         items={[
-          { label: "Home", href: "/" },
-          { label: "Shop", href: "/shop" },
-          {
-            label: product.categories.name,
-            href: `/category/${product.categories.slug}`,
-          },
+           { label: "Home", href: "/" },
+           {
+             label: product.categories.name,
+             href: `/category/${product.categories.slug}`,
+           },
           { label: product.name },
         ]}
       />

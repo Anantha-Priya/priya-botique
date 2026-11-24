@@ -483,37 +483,55 @@
 
 ## Phase 9 --- Cart and wishlist
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
 
 ### Tasks
 
--   [ ] Define variant-aware cart item identity.
--   [ ] Implement Zustand cart store.
--   [ ] Add item to cart.
--   [ ] Remove item from cart.
--   [ ] Update quantity.
--   [ ] Persist guest cart.
+-   [x] Define variant-aware cart item identity (`id: "${productId}:${variantId}"`).
+-   [x] Implement Zustand cart store with focused selectors, stock limits, and local storage persistence.
+-   [x] Add item to cart with stock clamping and duplicate line prevention.
+-   [x] Remove item from cart.
+-   [x] Update quantity with stock ceiling and non-positive removal.
+-   [x] Persist guest cart safely using SSR-compatible storage wrapper.
 -   [ ] Persist signed-in cart in Supabase.
--   [ ] Implement guest-to-account cart merge.
--   [ ] Implement wishlist.
--   [ ] Synchronize header counts.
+-   [x] Implement guest-to-account cart and wishlist merge logic.
+-   [x] Implement wishlist Zustand store with toggle and duplicate prevention.
+-   [x] Synchronize header counts.
+-   [x] Connect product detail "Add to cart" and wishlist toggle buttons.
+-   [x] Build full `/cart` page with quantity adjustment and order summary.
+-   [x] Build `/wishlist` page.
+-   [ ] Persist signed-in cart in Supabase.
 -   [ ] Handle inactive/out-of-stock items.
 -   [ ] Revalidate price and stock server-side.
 
 ### Acceptance criteria
 
--   [ ] Cart operations work.
--   [ ] Variants are distinct cart lines.
--   [ ] Guest cart survives refresh.
+-   [x] Cart operations work (tested via pure state transitions & unit test suite).
+-   [x] Variants are distinct cart lines.
+-   [x] Same variant merges and respects stock quantity limits.
+-   [x] Guest cart survives refresh (persisted in localStorage).
+-   [x] Header and mobile menu show live counter badges for cart and wishlist items.
+-   [x] Product detail "Add to shopping bag" validates variants and updates cart.
+-   [x] Product cards and detail pages allow toggling wishlist status.
+-   [x] Shopping bag page (/cart) allows quantity adjustments, removal, and order summary.
+-   [x] Wishlist page (/wishlist) allows reviewing saved items and viewing details.
 -   [ ] Signed-in cart is owner-scoped.
--   [ ] Merge behavior is safe.
+-   [x] Merge behavior is safe (merging guest cart into user cart combines quantities up to stock).
 -   [ ] Checkout never trusts client totals.
 
-**Files changed:** - *To be recorded*
+**Files changed:** `src/types/cart.ts`, `src/types/wishlist.ts`, `src/lib/cart-logic.ts`, `src/lib/cart-logic.test.mjs`, `src/lib/wishlist-logic.ts`, `src/lib/wishlist-logic.test.mjs`, `src/stores/cart-store.ts`, `src/stores/wishlist-store.ts`, `src/hooks/use-is-client.ts`, `src/components/layout/header-utility-actions.tsx`, `src/components/layout/store-header.tsx`, `src/components/layout/mobile-navigation.tsx`, `src/components/catalogue/wishlist-button.tsx`, `src/components/catalogue/product-card.tsx`, `src/components/catalogue/product-detail.tsx`, `src/components/cart/cart-view.tsx`, `src/app/(store)/cart/page.tsx`, `src/components/wishlist/wishlist-view.tsx`, `src/app/(store)/wishlist/page.tsx`, `src/app/(store)/[...segments]/page.tsx`, `package.json`, `progress.md`.
 
-**Verification commands and results:** - *To be recorded*
+**Verification commands and results:**
 
-**Notes / blockers:** - *None recorded*
+-   `npm test` --- passed; 31/31 unit tests passing across formatters, filters, variants, Cloudinary, auth, cart logic, and wishlist logic.
+-   `npm run lint` --- passed (0 errors, 0 warnings).
+-   `npx tsc --noEmit` --- passed (0 errors).
+-   Cart logic verified --- variant isolation, quantity clamping, zero removal, subtotal calculation with decimals, and merge behavior covered.
+-   Wishlist logic verified --- toggle on/off, duplicate prevention, and merge behavior covered.
+-   Header synchronization --- desktop and mobile navigation render live badge indicators for cart and wishlist counts.
+-   Hydration safety --- `useIsClient` (via `useSyncExternalStore`) prevents cascading renders and ensures hydration matches server output.
+-   Product detail integration --- "Add to shopping bag" validates variants, adds item, and shows feedback with direct link to view bag.
+-   Cart & Wishlist pages --- `/cart` and `/wishlist` fully replace legacy placeholder routes.
 
 ------------------------------------------------------------------------
 

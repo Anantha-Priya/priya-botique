@@ -5,13 +5,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   ArrowDown,
-  ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Pause,
-  Play,
 } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
 
 const heroSlides = [
   {
@@ -32,7 +28,7 @@ const slideInterval = 6500;
 
 export function HomeHero() {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isPaused] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -118,25 +114,15 @@ export function HomeHero() {
             A first look at PRIYA’s South Indian-inspired edit of clothing,
             jewellery, and accessories.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-5">
-            <Link
-              href="/shop"
-              className={buttonVariants({
-                size: "lg",
-                className: "rounded-full px-6",
-              })}
-            >
-              Explore the preview
-              <ArrowRight aria-hidden="true" className="size-4" />
-            </Link>
-            <Link
-              href="#categories"
-              className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-white transition-colors hover:text-[#f4d8a4]"
-            >
-              Meet the categories
-              <ArrowDown aria-hidden="true" className="size-4" />
-            </Link>
-          </div>
+           <div className="mt-8 flex flex-wrap items-center gap-5">
+             <Link
+               href="#categories"
+               className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-burgundy px-6 text-sm font-semibold text-white transition-colors hover:bg-brand-burgundy/90"
+             >
+               Meet the categories
+               <ArrowDown aria-hidden="true" className="size-4" />
+             </Link>
+           </div>
         </div>
       </div>
 
@@ -178,7 +164,7 @@ export function HomeHero() {
               />
             </button>
           ))}
-          <button
+          {/* <button
             type="button"
             aria-label={
               prefersReducedMotion
@@ -197,7 +183,7 @@ export function HomeHero() {
             ) : (
               <Pause aria-hidden="true" className="size-4" />
             )}
-          </button>
+          </button> */}
         </div>
       </div>
     </section>
