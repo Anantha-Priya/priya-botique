@@ -11,7 +11,7 @@ export function CategorySection() {
       className="px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24"
     >
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col gap-3 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-8 flex flex-col gap-3 sm:mb-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-burgundy">
               FIND YOUR OWN WAY
