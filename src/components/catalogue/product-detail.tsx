@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { useState } from "react";
 import { formatINR } from "@/lib/format-currency";
 import { optimizeCloudinaryImageUrl } from "@/lib/cloudinary-image";
@@ -69,6 +69,22 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
 
   const addItem = useCartStore((state) => state.addItem);
 
+  const currentImageIndex = Math.max(
+    0,
+    sortedImages.findIndex((image) => image.image_url === selectedImage),
+  );
+
+  function showPreviousImage() {
+    const previousIndex =
+      (currentImageIndex - 1 + sortedImages.length) % sortedImages.length;
+    setSelectedImage(sortedImages[previousIndex]?.image_url ?? selectedImage);
+  }
+
+  function showNextImage() {
+    const nextIndex = (currentImageIndex + 1) % sortedImages.length;
+    setSelectedImage(sortedImages[nextIndex]?.image_url ?? selectedImage);
+  }
+
   function handleAddToCart() {
     if (!selectedVariant) {
       setMessage("Please select an available variant.");
@@ -114,18 +130,40 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
       <section aria-label="Product images">
         <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-brand-beige">
           {selectedImage ? (
-            <Image
-              src={optimizeCloudinaryImageUrl(selectedImage)}
-              alt={
-                sortedImages.find((image) => image.image_url === selectedImage)
-                  ?.alt_text ?? product.name
-              }
-              fill
-              loading="eager"
-              unoptimized
-              sizes="(min-width: 1024px) 55vw, 100vw"
-              className="object-cover"
-            />
+            <>
+              <Image
+                src={optimizeCloudinaryImageUrl(selectedImage)}
+                alt={
+                  sortedImages.find((image) => image.image_url === selectedImage)
+                    ?.alt_text ?? product.name
+                }
+                fill
+                loading="eager"
+                unoptimized
+                sizes="(min-width: 1024px) 55vw, 100vw"
+                className="object-cover"
+              />
+              {sortedImages.length > 1 ? (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Previous image"
+                    onClick={showPreviousImage}
+                    className="absolute left-3 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-foreground shadow-sm transition hover:bg-white"
+                  >
+                    <ChevronLeft aria-hidden="true" className="size-5" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next image"
+                    onClick={showNextImage}
+                    className="absolute right-3 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-white/80 text-foreground shadow-sm transition hover:bg-white"
+                  >
+                    <ChevronRight aria-hidden="true" className="size-5" />
+                  </button>
+                </>
+              ) : null}
+            </>
           ) : (
             <div className="flex size-full items-center justify-center text-sm text-muted-foreground">
               Image coming soon

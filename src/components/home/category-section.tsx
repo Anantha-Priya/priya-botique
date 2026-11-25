@@ -42,12 +42,9 @@ export function CategorySection() {
                   fill
                   sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                   loading="lazy"
-                  className="object-cover transition-transform duration-500 motion-safe:group-hover:scale-[1.04]"
-                />
-                <span className="absolute top-4 left-4 rounded-full bg-background/90 px-3 py-1.5 text-[0.65rem] font-semibold tracking-wide text-foreground backdrop-blur-sm">
-                  SAMPLE IMAGE
-                </span>
-              </div>
+               className="object-cover transition-transform duration-500 motion-safe:group-hover:scale-[1.04]"
+             />
+           </div>
               <div className="flex items-start justify-between gap-4 pt-4">
                 <div>
                   <h3 className="text-xl font-medium">{category.label}</h3>
