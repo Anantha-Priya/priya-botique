@@ -17,15 +17,31 @@ import {
 } from "@/lib/product-selection";
 import type { ProductDetail } from "@/lib/catalogue";
 
+const STANDARD_CLOTHING_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+
 function attributeLabel(key: string): string {
   return key.charAt(0).toUpperCase() + key.slice(1);
 }
 
 export function ProductDetail({ product }: { product: ProductDetail }) {
+  const categorySlug = product.categories.slug.toLowerCase();
+  const isClothing = categorySlug === "clothing";
+
   const variants = product.product_variants.filter((variant) => variant.is_active);
+  const inStockVariant = variants.find((variant) => variant.stock_quantity > 0);
   const defaultVariant =
-    variants.find((variant) => variant.is_default) ?? variants[0] ?? null;
+    (isClothing && inStockVariant) ||
+    variants.find((variant) => variant.is_default) ||
+    variants[0] ||
+    null;
+
   const sizeOptions = getVariantOptions(variants, "size");
+  const clothingSizeButtons = isClothing
+    ? [
+        ...STANDARD_CLOTHING_SIZES,
+        ...sizeOptions.filter((option) => !STANDARD_CLOTHING_SIZES.includes(option)),
+      ]
+    : [];
   const colorOptions = getVariantOptions(variants, "color");
   const attributeOptions = getAttributeOptions(variants);
   const initialAttributes = Object.fromEntries(
@@ -44,7 +60,7 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
         first.sort_order - second.sort_order,
     )[0]?.image_url ?? null,
   );
-  const [size, setSize] = useState(defaultVariant?.size ?? "");
+  const [size, setSize] = useState(isClothing ? (defaultVariant?.size ?? "") : "");
   const [color, setColor] = useState(defaultVariant?.color ?? "");
   const [attributes, setAttributes] =
     useState<Record<string, string>>(initialAttributes);
@@ -52,7 +68,7 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
   const [message, setMessage] = useState("");
 
   const selectedVariant = findMatchingVariant(variants, {
-    size,
+    size: isClothing ? size : "",
     color,
     attributes,
   });
@@ -61,6 +77,26 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
   const compareAt = product.compare_at_price
     ? Number(product.compare_at_price)
     : null;
+
+  const displayMaterial =
+    product.fabric ||
+    (typeof product.attributes?.material === "string" ? product.attributes.material : "") ||
+    (typeof selectedVariant?.attributes?.material === "string"
+      ? selectedVariant.attributes.material
+      : "");
+  const displayColor =
+    selectedVariant?.color ||
+    color ||
+    (typeof product.attributes?.color === "string" ? product.attributes.color : "");
+
+  function getStockForSize(targetSize: string): number {
+    const matching = variants.filter(
+      (variant) =>
+        variant.size === targetSize &&
+        (!color || !variant.color || variant.color === color),
+    );
+    return matching.reduce((total, variant) => total + Math.max(0, variant.stock_quantity), 0);
+  }
   const sortedImages = [...product.product_images].sort(
     (first, second) =>
       Number(second.is_primary) - Number(first.is_primary) ||
@@ -217,9 +253,28 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
             {product.description}
           </p>
         ) : null}
-        {product.fabric ? (
-          <p className="mt-4 text-sm"><strong>Fabric:</strong> {product.fabric}</p>
+
+        {displayColor || displayMaterial ? (
+          <dl className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-border bg-card p-4 text-sm">
+            {displayColor ? (
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Colour
+                </dt>
+                <dd className="mt-1 font-semibold text-foreground">{displayColor}</dd>
+              </div>
+            ) : null}
+            {displayMaterial ? (
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Material
+                </dt>
+                <dd className="mt-1 font-semibold text-foreground">{displayMaterial}</dd>
+              </div>
+            ) : null}
+          </dl>
         ) : null}
+
         <aside
           aria-label="Shipping information"
           className="mt-6 rounded-lg border border-border p-4"
@@ -236,32 +291,58 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
         </aside>
 
         <div className="mt-8 space-y-5">
-          {sizeOptions.length > 0 ? (
-            <label className="grid gap-2 text-sm font-medium">
-              Size
-              <select
-                value={size}
-                onChange={(event) => {
-                  setSize(event.target.value);
-                  setMessage("");
-                }}
-                className="min-h-11 rounded-md border border-border bg-white px-3"
-              >
-                <option value="">Select size</option>
-                {sizeOptions.map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </label>
+          {isClothing && clothingSizeButtons.length > 0 ? (
+            <div>
+              <div className="mb-2.5 flex items-center justify-between">
+                <p className="text-sm font-medium text-foreground">Select Size</p>
+                {size ? (
+                  <span className="text-xs text-muted-foreground">
+                    Selected: <strong className="text-foreground">{size}</strong>
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap gap-2.5" role="group" aria-label="Available sizes">
+                {clothingSizeButtons.map((option) => {
+                  const optionStock = getStockForSize(option);
+                  const isAvailable = optionStock > 0;
+                  const isSelected = size === option;
+
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      disabled={!isAvailable}
+                      aria-pressed={isSelected}
+                      onClick={() => {
+                        if (!isAvailable) return;
+                        setSize(option);
+                        setQuantity(1);
+                        setMessage("");
+                      }}
+                      className={`min-h-11 min-w-12 rounded-lg border px-3.5 text-sm font-semibold transition-colors ${
+                        isSelected
+                          ? "border-brand-burgundy bg-brand-burgundy text-white"
+                          : isAvailable
+                            ? "border-border bg-card text-foreground hover:border-brand-burgundy hover:bg-brand-beige/50"
+                            : "cursor-not-allowed border-border bg-muted/50 text-muted-foreground/50 line-through opacity-60"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           ) : null}
 
-          {colorOptions.length > 0 ? (
+          {colorOptions.length > 1 ? (
             <label className="grid gap-2 text-sm font-medium">
               Colour
               <select
                 value={color}
                 onChange={(event) => {
                   setColor(event.target.value);
+                  setQuantity(1);
                   setMessage("");
                 }}
                 className="min-h-11 rounded-md border border-border bg-white px-3"
@@ -274,7 +355,9 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
             </label>
           ) : null}
 
-          {Object.entries(attributeOptions).map(([key, options]) => (
+          {Object.entries(attributeOptions)
+            .filter(([key]) => key.toLowerCase() !== "material")
+            .map(([key, options]) => (
             <label key={key} className="grid gap-2 text-sm font-medium">
               {attributeLabel(key)}
               <select
@@ -328,8 +411,16 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
               {selectedVariant
-                ? `${stock} in stock`
-                : "Select options to check availability"}
+                ? stock > 0
+                  ? isClothing && size
+                    ? `${stock} in stock for size ${size}`
+                    : `${stock} in stock`
+                  : isClothing && size
+                    ? `Out of stock for size ${size}`
+                    : "Currently out of stock"
+                : isClothing
+                  ? "Select an available size to check stock"
+                  : "Select options to check availability"}
             </p>
           </div>
 

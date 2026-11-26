@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LogOut, Images, PackagePlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "@/components/account/profile-form";
 import { AddressManager } from "@/components/account/address-manager";
@@ -29,42 +30,65 @@ export default async function AccountPage() {
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
-      <nav aria-label="Account sections" className="mb-8 flex flex-wrap gap-2 border-b border-border pb-4">
-        <Link href="/account" className="rounded-md bg-brand-burgundy px-4 py-2 text-sm font-semibold text-white">Overview</Link>
-        <form action="/auth/logout" method="post">
-          <button type="submit" className="min-h-10 rounded-md border border-border px-4 text-sm">Sign out</button>
-        </form>
-        {profile?.role === "admin" ? (
-          <Link href="/admin/product-images" className="min-h-10 rounded-md border border-border px-4 py-2 text-sm">
-            Product images
-          </Link>
-        ) : null}
-      </nav>
+      <header className="flex flex-col justify-between gap-6 border-b border-border pb-8 sm:flex-row sm:items-end">
+        <div>
+          
+          <h1 className="mt-3 font-heading text-4xl font-medium text-foreground sm:text-5xl">
+            My Account
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground sm:text-base">
+            
+            {user.email ? (
+              <span className="ml-2 text-xs text-muted-foreground/80">
+                ({user.email})
+              </span>
+            ) : null}
+          </p>
+        </div>
 
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-burgundy">PRIYA account</p>
-        <h1 className="mt-3 font-heading text-4xl font-medium">My account</h1>
-        <p className="mt-3 text-sm text-muted-foreground">{user.email}</p>
+        <nav aria-label="Account actions" className="flex flex-wrap items-center gap-2.5">
+          {profile?.role === "admin" ? (
+            <>
+              <Link
+                href="/admin/products"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand-burgundy px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-burgundy/90"
+              >
+                <PackagePlus className="size-4" aria-hidden="true" />
+                Manage products
+              </Link>
+              <Link
+                href="/admin/product-images"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                <Images className="size-4 text-brand-burgundy" aria-hidden="true" />
+                Product images
+              </Link>
+            </>
+          ) : null}
+          <form action="/auth/logout" method="post">
+            <button
+              type="submit"
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            >
+              <LogOut className="size-4 text-muted-foreground" aria-hidden="true" />
+              Sign out
+            </button>
+          </form>
+        </nav>
       </header>
 
-      <section className="mt-10" aria-labelledby="profile-heading">
-        <h2 id="profile-heading" className="font-heading text-2xl font-medium">Profile</h2>
-        <div className="mt-4">
-          <ProfileForm
-            fullName={profile?.full_name ?? ""}
-            phone={profile?.phone ?? ""}
-          />
-        </div>
+      <section className="mt-8" aria-labelledby="profile-heading">
+        <ProfileForm
+          fullName={profile?.full_name ?? ""}
+          phone={profile?.phone ?? ""}
+        />
       </section>
 
-      <section className="mt-12 border-t border-border pt-8" aria-labelledby="addresses-heading">
-        <h2 id="addresses-heading" className="font-heading text-2xl font-medium">Addresses</h2>
-        <div className="mt-5">
-          <AddressManager
-            initialAddresses={addresses ?? []}
-            migrationPending={migrationPending}
-          />
-        </div>
+      <section className="mt-10 sm:mt-12" aria-labelledby="addresses-heading">
+        <AddressManager
+          initialAddresses={addresses ?? []}
+          migrationPending={migrationPending}
+        />
       </section>
     </main>
   );

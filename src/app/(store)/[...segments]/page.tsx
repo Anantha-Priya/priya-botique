@@ -78,10 +78,10 @@ async function PlaceholderContent({ params }: PlaceholderRouteProps) {
         <div className="absolute inset-0 bg-white/70" />
         <div className="relative mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-6 py-16">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-burgundy">
-            About PRIYA
+            GET TO KNOW US
           </p>
           <h1 className="mt-4 font-heading text-4xl font-medium sm:text-5xl">
-            About PRIYA
+            The Story Behind PRIYA
           </h1>
           <div className="mt-6 space-y-4 text-base leading-7 text-foreground/90">
             <p>PRIYA&apos;S BOUTIQUE was born from a love for timeless elegance, beautiful details, and personal style.</p>
