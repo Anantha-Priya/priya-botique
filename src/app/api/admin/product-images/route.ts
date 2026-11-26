@@ -14,6 +14,7 @@ const requestSchema = z.object({
   publicId: z.string().min(1).max(255),
   secureUrl: z.string().url(),
   altText: z.string().trim().min(1).max(300),
+  isPrimary: z.boolean().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Uploaded image details are invalid." }, { status: 400 });
   }
 
-  const { productId, publicId, secureUrl, altText } = parsedBody.data;
+  const { productId, publicId, secureUrl, altText, isPrimary } = parsedBody.data;
   if (!isValidCloudinaryProductImageId(publicId, productId)) {
     return NextResponse.json({ error: "Uploaded image is not scoped to this product." }, { status: 400 });
   }
@@ -101,6 +102,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unable to read existing product images." }, { status: 500 });
   }
 
+  const shouldBePrimary =
+    isPrimary === true || !existingImages?.some((image) => image.is_primary);
+
+  if (shouldBePrimary && existingImages?.some((image) => image.is_primary)) {
+    const { error: clearPrimaryError } = await admin.supabase
+      .from("product_images")
+      .update({ is_primary: false })
+      .eq("product_id", productId)
+      .eq("is_primary", true);
+
+    if (clearPrimaryError) {
+      return NextResponse.json(
+        { error: "Unable to update existing primary image." },
+        { status: 500 },
+      );
+    }
+  }
+
   const { data: savedImage, error: insertError } = await admin.supabase
     .from("product_images")
     .insert({
@@ -108,7 +127,7 @@ export async function POST(request: NextRequest) {
       image_url: asset.secure_url,
       alt_text: altText,
       sort_order: (existingImages?.[0]?.sort_order ?? -1) + 1,
-      is_primary: !existingImages?.some((image) => image.is_primary),
+      is_primary: shouldBePrimary,
     })
     .select("id,image_url,alt_text,sort_order,is_primary")
     .single();

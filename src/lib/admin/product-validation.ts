@@ -59,3 +59,13 @@ export const createProductSchema = z
   });
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
+
+export const updateProductSchema = createProductSchema.and(
+  z.object({
+    removeImageIds: z.array(z.string().uuid()).optional().default([]),
+    primaryImageId: z.string().uuid().nullable().optional(),
+    willUploadPrimaryImage: z.boolean().optional().default(false),
+  }),
+);
+
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;

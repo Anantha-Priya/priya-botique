@@ -2,11 +2,23 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { ArrowLeft, Gem, Plus, Shirt, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Gem,
+  Pencil,
+  Plus,
+  Shirt,
+  Sparkles,
+} from "lucide-react";
 import { getAdminContext } from "@/lib/admin/get-admin-context";
+import { optimizeCloudinaryImageUrl } from "@/lib/cloudinary-image";
 import { formatINR } from "@/lib/format-currency";
 
 export const metadata: Metadata = { title: "Manage products" };
+
+const PAGE_SIZE = 20;
 
 const CATEGORY_CARDS = [
   {
@@ -29,7 +41,11 @@ const CATEGORY_CARDS = [
   },
 ] as const;
 
-export default function AdminProductsPage() {
+export default function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   return (
     <Suspense
       fallback={
@@ -40,12 +56,16 @@ export default function AdminProductsPage() {
         </main>
       }
     >
-      <AdminProductsContent />
+      <AdminProductsContent searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function AdminProductsContent() {
+async function AdminProductsContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { supabase, user, isAdmin } = await getAdminContext();
 
   if (!user) {
@@ -55,41 +75,43 @@ async function AdminProductsContent() {
     notFound();
   }
 
-  const { data: products, error } = await supabase
+  const params = await searchParams;
+  const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
+  const { data: products, error, count } = await supabase
     .from("products")
-    .select("id,name,slug,base_price,is_active,categories(name,slug)")
+    .select(
+      "id,name,slug,base_price,is_active,fabric,categories(name,slug),product_images(image_url,alt_text,is_primary,sort_order),product_variants(stock_quantity,is_active)",
+      { count: "exact" },
+    )
     .order("created_at", { ascending: false })
-    .limit(30);
+    .range(from, to);
 
   if (error) {
     throw new Error(`Unable to load products: ${error.message}`);
   }
 
+  const totalCount = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <Link
-            href="/account"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-brand-burgundy hover:underline"
-          >
-            <ArrowLeft className="size-3.5" aria-hidden="true" />
-            Back to Account
-          </Link>
-          <h1 className="mt-3 font-heading text-4xl font-medium text-foreground">
-            Manage Products
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Choose a category below to add a new product to PRIYA&apos;S BOUTIQUE.
-          </p>
-        </div>
-
+      <div>
         <Link
-          href="/admin/product-images"
-          className="inline-flex min-h-10 items-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+          href="/account"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-brand-burgundy hover:underline"
         >
-          Upload Product Images
+          <ArrowLeft className="size-3.5" aria-hidden="true" />
+          Back to Account
         </Link>
+        <h1 className="mt-3 font-heading text-4xl font-medium text-foreground">
+          Manage Products
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Add new products by category or edit existing catalogue products and their images.
+        </p>
       </div>
 
       <section className="mt-8 grid gap-5 sm:grid-cols-3" aria-label="Add product by category">
@@ -125,52 +147,124 @@ async function AdminProductsContent() {
       </section>
 
       <section className="mt-12" aria-labelledby="recent-products-heading">
-        <h2 id="recent-products-heading" className="font-heading text-2xl font-medium text-foreground">
-          Recent Catalogue Products
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="recent-products-heading" className="font-heading text-2xl font-medium text-foreground">
+            Recent Catalogue Products
+          </h2>
+          <span className="rounded-full bg-brand-beige px-3 py-1 text-xs font-semibold text-foreground">
+            {totalCount} total
+          </span>
+        </div>
+
         {products && products.length > 0 ? (
-          <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card shadow-(--shadow-card)">
-            <ul className="divide-y divide-border">
-              {products.map((product) => {
-                const categoryRecord = Array.isArray(product.categories)
-                  ? product.categories[0]
-                  : product.categories;
-                return (
-                  <li
-                    key={product.id}
-                    className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center sm:px-6"
-                  >
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-foreground">{product.name}</p>
-                        <span className="rounded-full bg-brand-beige px-2.5 py-0.5 text-xs font-medium text-foreground">
-                          {categoryRecord?.name ?? "Uncategorized"}
-                        </span>
-                        {!product.is_active ? (
-                          <span className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground">
-                            Draft
-                          </span>
-                        ) : null}
+          <>
+            <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card shadow-(--shadow-card)">
+              <ul className="divide-y divide-border">
+                {products.map((product) => {
+                  const categoryRecord = Array.isArray(product.categories)
+                    ? product.categories[0]
+                    : product.categories;
+                  const images = [...(product.product_images ?? [])].sort(
+                    (a, b) =>
+                      Number(b.is_primary) - Number(a.is_primary) ||
+                      a.sort_order - b.sort_order,
+                  );
+                  const primaryImage = images[0];
+                  const activeVariants = (product.product_variants ?? []).filter(
+                    (v) => v.is_active,
+                  );
+                  const totalStock = activeVariants.reduce(
+                    (sum, v) => sum + Math.max(0, v.stock_quantity),
+                    0,
+                  );
+
+                  return (
+                    <li
+                      key={product.id}
+                      className="flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center sm:px-6"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="size-16 shrink-0 overflow-hidden rounded-xl border border-border bg-brand-beige/60">
+                          {primaryImage ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={optimizeCloudinaryImageUrl(primaryImage.image_url)}
+                              alt={primaryImage.alt_text || product.name}
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex size-full items-center justify-center text-[11px] text-muted-foreground">
+                              No image
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-foreground">{product.name}</p>
+                            <span className="rounded-full bg-brand-beige px-2.5 py-0.5 text-xs font-medium text-foreground">
+                              {categoryRecord?.name ?? "Uncategorized"}
+                            </span>
+                            {!product.is_active ? (
+                              <span className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground">
+                                Draft
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {formatINR(Number(product.base_price))} · {totalStock} in stock ·{" "}
+                            {images.length} {images.length === 1 ? "image" : "images"}
+                            {product.fabric ? ` · ${product.fabric}` : ""}
+                          </p>
+                        </div>
                       </div>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {formatINR(Number(product.base_price))} · /{product.slug}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {product.is_active ? (
+
+                      <div className="flex shrink-0 items-center gap-3 self-end sm:self-center">
                         <Link
-                          href={`/products/${product.slug}`}
-                          className="text-sm font-medium text-brand-burgundy underline underline-offset-4"
+                          href={`/admin/products/${product.id}/edit`}
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-4 py-1.5 text-sm font-medium text-brand-burgundy transition-colors hover:border-brand-burgundy hover:bg-brand-beige/50"
                         >
-                          View
+                          <Pencil className="size-3.5" aria-hidden="true" />
+                          Edit
                         </Link>
-                      ) : null}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            {totalPages > 1 ? (
+              <nav
+                aria-label="Catalogue pagination"
+                className="mt-6 flex items-center justify-between text-sm"
+              >
+                <p className="text-muted-foreground">
+                  Page {page} of {totalPages}
+                </p>
+                <div className="flex items-center gap-2">
+                  {page > 1 ? (
+                    <Link
+                      href={`/admin/products?page=${page - 1}`}
+                      className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 font-medium hover:bg-secondary"
+                    >
+                      <ChevronLeft className="size-4" aria-hidden="true" />
+                      Previous
+                    </Link>
+                  ) : null}
+                  {page < totalPages ? (
+                    <Link
+                      href={`/admin/products?page=${page + 1}`}
+                      className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 font-medium hover:bg-secondary"
+                    >
+                      Next
+                      <ChevronRight className="size-4" aria-hidden="true" />
+                    </Link>
+                  ) : null}
+                </div>
+              </nav>
+            ) : null}
+          </>
         ) : (
           <p className="mt-4 text-sm text-muted-foreground">No products found yet.</p>
         )}
