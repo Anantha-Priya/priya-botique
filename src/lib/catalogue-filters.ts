@@ -27,10 +27,7 @@ const allowedSorts = new Set<CatalogueSort>([
 ]);
 const allowedAttributes = new Set([
   "material",
-  "finish",
-  "occasion",
   "dimensions",
-  "style",
 ]);
 
 function firstValue(value: string | string[] | undefined): string | undefined {

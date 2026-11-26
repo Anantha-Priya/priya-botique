@@ -35,8 +35,6 @@ test("variant options omit inactive variants and duplicates", () => {
   assert.deepEqual(getVariantOptions(variants, "color"), ["Ruby", "Gold"]);
   assert.deepEqual(getAttributeOptions(variants), {
     material: ["Silk"],
-    occasion: ["Wedding", "Festive"],
-    finish: ["Antique"],
   });
 });
 

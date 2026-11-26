@@ -31,7 +31,7 @@ export function getAttributeOptions(
   for (const variant of variants) {
     if (!variant.is_active) continue;
     for (const [key, value] of Object.entries(variant.attributes)) {
-      if (key === "demo" || typeof value !== "string" || !value) continue;
+      if (key === "demo" || key === "style" || key === "occasion" || key === "finish" || typeof value !== "string" || !value) continue;
       options[key] ??= new Set<string>();
       options[key].add(value);
     }

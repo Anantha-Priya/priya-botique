@@ -38,7 +38,7 @@ test("pagination links preserve active filters without carrying the old page", (
     category: "jewellery",
     minPrice: "100",
     size: "Free Size",
-    attribute: "finish",
+    attribute: "material",
     attributeValue: "Matte",
     sort: "price-asc",
     page: "3",
@@ -46,9 +46,9 @@ test("pagination links preserve active filters without carrying the old page", (
 
   assert.equal(
     buildCatalogueHref("/shop", filters, 4),
-    "/shop?category=jewellery&minPrice=100&size=Free+Size&attribute=finish&attributeValue=Matte&sort=price-asc&page=4",
+    "/shop?category=jewellery&minPrice=100&size=Free+Size&attribute=material&attributeValue=Matte&sort=price-asc&page=4",
   );
-  assert.equal(buildCatalogueHref("/shop", filters, 1), "/shop?category=jewellery&minPrice=100&size=Free+Size&attribute=finish&attributeValue=Matte&sort=price-asc");
+  assert.equal(buildCatalogueHref("/shop", filters, 1), "/shop?category=jewellery&minPrice=100&size=Free+Size&attribute=material&attributeValue=Matte&sort=price-asc");
 });
 
 test("invalid slugs, prices, sorts, and oversized pages fall back safely", () => {
