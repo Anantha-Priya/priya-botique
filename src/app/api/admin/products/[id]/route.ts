@@ -1,9 +1,12 @@
 import { randomUUID } from "node:crypto";
+import { revalidatePath } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
+import { getDeletePermissionState } from "@/lib/admin/delete-permission";
 import { getAdminContext } from "@/lib/admin/get-admin-context";
 import { isSameSiteRequest } from "@/lib/admin/is-same-site-request";
 import { updateProductSchema } from "@/lib/admin/product-validation";
+import { getCloudinaryServerClient } from "@/lib/cloudinary-server";
 
 const idSchema = z.string().uuid();
 
@@ -270,4 +273,146 @@ export async function PATCH(
   }
 
   return NextResponse.json({ product: updatedProduct });
+}
+
+function extractCloudinaryPublicId(imageUrl: string, cloudName: string): string | null {
+  try {
+    const parsed = new URL(imageUrl);
+    if (parsed.hostname !== "res.cloudinary.com") return null;
+    const prefix = `/${cloudName}/image/upload/`;
+    const idx = parsed.pathname.indexOf(prefix);
+    if (idx === -1) return null;
+
+    const rest = parsed.pathname.slice(idx + prefix.length);
+    const segments = rest.split("/").filter(Boolean);
+    // Skip transformation segments and optional version segment (v123456)
+    while (segments.length > 0 && (segments[0].includes(",") || /^(f|q|w|h|c|dpr)_/.test(segments[0]))) {
+      segments.shift();
+    }
+    if (segments.length > 0 && /^v\d+$/.test(segments[0])) {
+      segments.shift();
+    }
+    if (segments.length === 0) return null;
+
+    const joined = segments.join("/");
+    const lastDot = joined.lastIndexOf(".");
+    return lastDot > 0 ? joined.slice(0, lastDot) : joined;
+  } catch {
+    return null;
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  if (!isSameSiteRequest(request)) {
+    return NextResponse.json({ error: "Request origin is not allowed." }, { status: 403 });
+  }
+
+  const admin = await getAdminContext();
+  if (!admin.user) {
+    return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
+  }
+  if (!admin.isAdmin) {
+    return NextResponse.json({ error: "Administrator access is required." }, { status: 403 });
+  }
+
+  const permission = await getDeletePermissionState(admin.user.id);
+  if (!permission.enabled) {
+    return NextResponse.json(
+      {
+        error:
+          permission.status === "expired"
+            ? "Your deletion permission has expired. Enable it again in Admin Profile."
+            : "Product deletion is currently disabled.",
+        code:
+          permission.status === "expired"
+            ? "DELETE_PERMISSION_EXPIRED"
+            : "DELETE_PERMISSION_DISABLED",
+      },
+      { status: 403 },
+    );
+  }
+
+  const { id } = await context.params;
+  if (!idSchema.safeParse(id).success) {
+    return NextResponse.json({ error: "Invalid product ID." }, { status: 400 });
+  }
+
+  const { data: existingProduct, error: fetchError } = await admin.supabase
+    .from("products")
+    .select("id,name,product_images(id,image_url)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (fetchError) {
+    return NextResponse.json(
+      { error: "Unable to load the selected product." },
+      { status: 500 },
+    );
+  }
+  if (!existingProduct) {
+    return NextResponse.json({ error: "Product not found." }, { status: 404 });
+  }
+
+  const imageUrls = Array.from(
+    new Set(
+      (
+        (existingProduct.product_images ?? []) as {
+          id: string;
+          image_url: string;
+        }[]
+      ).map((img) => img.image_url),
+    ),
+  );
+
+  const { error: deleteError } = await admin.supabase
+    .from("products")
+    .delete()
+    .eq("id", id);
+
+  if (deleteError) {
+    if (deleteError.code === "23503") {
+      return NextResponse.json(
+        {
+          error:
+            "This product cannot be deleted permanently because it is referenced by existing order or customer records.",
+        },
+        { status: 409 },
+      );
+    }
+    return NextResponse.json(
+      { error: deleteError.message || "Unable to delete product." },
+      { status: 500 },
+    );
+  }
+
+  // Safely clean up unshared Cloudinary assets after DB deletion succeeds
+  const cloudinaryConfig = getCloudinaryServerClient();
+  if (cloudinaryConfig && imageUrls.length > 0) {
+    for (const imageUrl of imageUrls) {
+      const publicId = extractCloudinaryPublicId(imageUrl, cloudinaryConfig.cloudName);
+      if (!publicId) continue;
+
+      const { count } = await admin.supabase
+        .from("product_images")
+        .select("id", { count: "exact", head: true })
+        .eq("image_url", imageUrl);
+
+      if ((count ?? 0) === 0) {
+        await cloudinaryConfig.client.uploader
+          .destroy(publicId, { resource_type: "image" })
+          .catch(() => null);
+      }
+    }
+  }
+
+  revalidatePath("/");
+  revalidatePath("/new-arrivals");
+  revalidatePath("/admin/products");
+  revalidatePath("/admin/new-arrivals");
+  revalidatePath("/admin/dashboard");
+
+  return NextResponse.json({ deleted: true, id });
 }

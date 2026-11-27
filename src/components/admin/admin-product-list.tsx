@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Pencil, Pin, PinOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertTriangle, Clock, Pencil, Pin, PinOff, Trash2 } from "lucide-react";
+import type { DeletePermissionState } from "@/lib/admin/delete-permission";
 import { optimizeCloudinaryImageUrl } from "@/lib/cloudinary-image";
 import { formatINR } from "@/lib/format-currency";
 
@@ -30,12 +31,21 @@ const CATEGORY_FILTERS = [
   { slug: "accessories", label: "Accessories" },
 ] as const;
 
+function formatCountdown(remainingMs: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
 export function AdminProductList({
   initialProducts,
   migrationPending = false,
+  initialDeletePermission = { enabled: false, expiresAt: null, status: "disabled" },
 }: {
   initialProducts: AdminProductListItem[];
   migrationPending?: boolean;
+  initialDeletePermission?: DeletePermissionState;
 }) {
   const router = useRouter();
   const [products, setProducts] = useState<AdminProductListItem[]>(initialProducts);
@@ -46,6 +56,38 @@ export function AdminProductList({
     text: string;
   } | null>(null);
 
+  const [deletePermission, setDeletePermission] = useState<DeletePermissionState>(
+    initialDeletePermission,
+  );
+  const [now, setNow] = useState<number>(() => Date.now());
+  const [deleteTarget, setDeleteTarget] = useState<AdminProductListItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (!deletePermission.enabled || !deletePermission.expiresAt) return;
+    const interval = window.setInterval(() => {
+      const current = Date.now();
+      setNow(current);
+      if (deletePermission.expiresAt && current >= deletePermission.expiresAt) {
+        setDeletePermission({
+          enabled: false,
+          expiresAt: deletePermission.expiresAt,
+          status: "expired",
+        });
+      }
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [deletePermission.enabled, deletePermission.expiresAt]);
+
+  const remainingMs =
+    deletePermission.enabled && deletePermission.expiresAt
+      ? Math.max(0, deletePermission.expiresAt - now)
+      : 0;
+  const canDelete = deletePermission.enabled && remainingMs > 0;
+  const isPermissionExpired =
+    deletePermission.status === "expired" ||
+    (deletePermission.enabled && remainingMs <= 0);
+
   const visibleProducts =
     activeCategory === "all"
       ? products
@@ -54,7 +96,7 @@ export function AdminProductList({
   const pinnedCount = products.filter((p) => p.is_pinned).length;
 
   async function togglePin(product: AdminProductListItem) {
-    if (migrationPending || pendingId) return;
+    if (migrationPending || pendingId || deleting) return;
     const nextPinned = !product.is_pinned;
     setPendingId(product.id);
     setStatusMessage(null);
@@ -103,6 +145,58 @@ export function AdminProductList({
     }
   }
 
+  async function confirmDelete() {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    setStatusMessage(null);
+
+    try {
+      const response = await fetch(`/api/admin/products/${deleteTarget.id}`, {
+        method: "DELETE",
+      });
+
+      const body = (await response.json().catch(() => null)) as
+        | { deleted?: boolean; error?: string; code?: string }
+        | null;
+
+      if (!response.ok || !body?.deleted) {
+        if (
+          body?.code === "DELETE_PERMISSION_EXPIRED" ||
+          body?.code === "DELETE_PERMISSION_DISABLED"
+        ) {
+          setDeletePermission({
+            enabled: false,
+            expiresAt: null,
+            status:
+              body.code === "DELETE_PERMISSION_EXPIRED" ? "expired" : "disabled",
+          });
+        }
+        throw new Error(body?.error ?? "Unable to delete product.");
+      }
+
+      setProducts((current) =>
+        current.filter((item) => item.id !== deleteTarget.id),
+      );
+      setDeleteTarget(null);
+      setStatusMessage({
+        type: "success",
+        text: "Product deleted successfully.",
+      });
+      router.refresh();
+    } catch (caught) {
+      setDeleteTarget(null);
+      setStatusMessage({
+        type: "error",
+        text:
+          caught instanceof Error
+            ? caught.message
+            : "Unable to delete product.",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
     <div>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -135,6 +229,34 @@ export function AdminProductList({
           <Pin className="size-3.5" aria-hidden="true" />
           {pinnedCount} pinned to New Arrivals
         </span>
+      </div>
+
+      {/* Temporary Product Deletion Permission Banner */}
+      <div
+        className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-2.5 text-xs font-medium ${
+          canDelete
+            ? "border-brand-champagne bg-brand-beige/60 text-brand-burgundy"
+            : isPermissionExpired
+              ? "border-destructive/30 bg-destructive/10 text-destructive"
+              : "border-border bg-card text-muted-foreground"
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <Clock className="size-4 shrink-0" aria-hidden="true" />
+          <span>
+            {canDelete
+              ? `Product deletion enabled. Permission expires in ${formatCountdown(remainingMs)}.`
+              : isPermissionExpired
+                ? "Your deletion permission has expired. Enable it again in Admin Profile."
+                : "Product deletion is currently disabled."}
+          </span>
+        </div>
+        <Link
+          href="/admin/profile"
+          className="font-semibold text-brand-burgundy underline underline-offset-4 hover:text-brand-burgundy/80"
+        >
+          {canDelete ? "Manage in Admin Profile" : "Enable in Admin Profile"}
+        </Link>
       </div>
 
       {migrationPending ? (
@@ -219,7 +341,7 @@ export function AdminProductList({
                   <div className="flex shrink-0 flex-wrap items-center gap-2.5 self-end sm:self-center">
                     <button
                       type="button"
-                      disabled={isPending || migrationPending}
+                      disabled={isPending || migrationPending || deleting}
                       aria-pressed={product.is_pinned}
                       onClick={() => togglePin(product)}
                       className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3.5 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
@@ -248,6 +370,24 @@ export function AdminProductList({
                       <Pencil className="size-3.5" aria-hidden="true" />
                       Edit
                     </Link>
+
+                    <button
+                      type="button"
+                      disabled={!canDelete || deleting}
+                      title={
+                        canDelete
+                          ? `Delete ${product.name}`
+                          : "Enable Product Deletion in Admin Profile first"
+                      }
+                      onClick={() => {
+                        setStatusMessage(null);
+                        setDeleteTarget(product);
+                      }}
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-destructive/30 bg-background px-3.5 py-1.5 text-sm font-medium text-destructive transition-colors hover:border-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      <Trash2 className="size-3.5" aria-hidden="true" />
+                      Delete
+                    </button>
                   </div>
                 </li>
               );
@@ -259,6 +399,79 @@ export function AdminProductList({
           No products found in this category.
         </p>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-product-dialog-title"
+            className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-(--shadow-floating)"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <AlertTriangle className="size-5" aria-hidden="true" />
+              </div>
+              <div>
+                <h3
+                  id="delete-product-dialog-title"
+                  className="font-heading text-xl font-medium text-foreground"
+                >
+                  Are you sure you want to delete this product permanently?
+                </h3>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  This action cannot be undone. All variants and image records for this product will be permanently removed.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+              <div className="size-14 shrink-0 overflow-hidden rounded-lg border border-border bg-brand-beige/60">
+                {deleteTarget.primaryImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={optimizeCloudinaryImageUrl(deleteTarget.primaryImageUrl)}
+                    alt={deleteTarget.primaryImageAlt || deleteTarget.name}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <div className="flex size-full items-center justify-center text-[10px] text-muted-foreground">
+                    No image
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-foreground">
+                  {deleteTarget.name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {deleteTarget.categoryName} · {formatINR(Number(deleteTarget.base_price))}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeleteTarget(null)}
+                className="min-h-10 rounded-lg border border-border bg-background px-5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={confirmDelete}
+                className="min-h-10 rounded-lg bg-destructive px-5 text-sm font-semibold text-white transition-colors hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {deleting ? "Deleting..." : "Continue"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

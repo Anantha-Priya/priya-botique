@@ -15,6 +15,7 @@ import {
   AdminProductList,
   type AdminProductListItem,
 } from "@/components/admin/admin-product-list";
+import { getDeletePermissionState } from "@/lib/admin/delete-permission";
 import { getAdminContext } from "@/lib/admin/get-admin-context";
 
 export const metadata: Metadata = { title: "Manage products" };
@@ -93,6 +94,8 @@ async function AdminProductsContent({
   if (!isAdmin) {
     redirect("/account");
   }
+
+  const deletePermissionState = await getDeletePermissionState(user.id);
 
   const params = await searchParams;
   const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
@@ -231,6 +234,7 @@ async function AdminProductsContent({
         <AdminProductList
           initialProducts={listItems}
           migrationPending={migrationPending}
+          initialDeletePermission={deletePermissionState}
         />
 
         {totalPages > 1 ? (

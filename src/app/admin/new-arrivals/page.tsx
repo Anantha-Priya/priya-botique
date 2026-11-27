@@ -7,6 +7,7 @@ import {
   AdminProductList,
   type AdminProductListItem,
 } from "@/components/admin/admin-product-list";
+import { getDeletePermissionState } from "@/lib/admin/delete-permission";
 import { getAdminContext } from "@/lib/admin/get-admin-context";
 
 export const metadata: Metadata = { title: "Manage New Arrivals" };
@@ -54,6 +55,8 @@ async function AdminNewArrivalsContent() {
   if (!isAdmin) {
     redirect("/account");
   }
+
+  const deletePermissionState = await getDeletePermissionState(user.id);
 
   let migrationPending = false;
   let { data: products, error } = await supabase
@@ -149,6 +152,7 @@ async function AdminNewArrivalsContent() {
         <AdminProductList
           initialProducts={listItems}
           migrationPending={migrationPending}
+          initialDeletePermission={deletePermissionState}
         />
       </section>
     </main>

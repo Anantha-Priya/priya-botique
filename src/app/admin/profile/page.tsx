@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { AdminDeletePermissionCard } from "@/components/admin/admin-delete-permission-card";
 import { AdminPasswordForm } from "@/components/admin/admin-password-form";
+import { getDeletePermissionState } from "@/lib/admin/delete-permission";
 import { getAdminContext } from "@/lib/admin/get-admin-context";
 
 export const metadata: Metadata = { title: "Admin Profile" };
@@ -32,6 +34,8 @@ async function AdminProfileContent() {
   if (!isAdmin) {
     redirect("/account");
   }
+
+  const deletePermissionState = await getDeletePermissionState(user.id);
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
@@ -106,6 +110,10 @@ async function AdminProfileContent() {
       <section className="mt-8" aria-label="Password settings">
         <AdminPasswordForm />
       </section>
+
+      <div className="mt-8">
+        <AdminDeletePermissionCard initialState={deletePermissionState} />
+      </div>
     </main>
   );
 }
