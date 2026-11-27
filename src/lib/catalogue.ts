@@ -81,10 +81,11 @@ function buildProductQuery(
     filters: CatalogueFilters;
     categorySlug?: string;
     collectionSlug?: string;
+    pinnedOnly?: boolean;
   },
   head = false,
 ) {
-  const { filters, categorySlug, collectionSlug } = options;
+  const { filters, categorySlug, collectionSlug, pinnedOnly } = options;
   const filterVariants = Boolean(
     filters.size ||
       filters.color ||
@@ -117,6 +118,9 @@ function buildProductQuery(
     .eq("is_active", true)
     .eq("categories.is_active", true);
 
+  if (pinnedOnly) {
+    query = query.eq("is_pinned", true);
+  }
   if (categorySlug) {
     query = query.eq("categories.slug", categorySlug);
   }
@@ -304,10 +308,48 @@ export async function getRelatedProducts(
   return data ?? [];
 }
 
+export async function getPinnedNewArrivals(
+  limit = 12,
+): Promise<CatalogueProduct[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(
+      [
+        "id",
+        "slug",
+        "name",
+        "description",
+        "base_price",
+        "categories!inner(name,slug)",
+        "product_images(image_url,alt_text,sort_order,is_primary)",
+        "product_variants(size,color,stock_quantity)",
+      ].join(","),
+    )
+    .eq("is_active", true)
+    .eq("categories.is_active", true)
+    .eq("is_pinned", true)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(limit)
+    .overrideTypes<CatalogueProduct[], { merge: false }>();
+
+  if (error) {
+    // Gracefully return empty if the is_pinned migration has not been applied yet.
+    if (error.code === "42703" || error.code === "PGRST204") {
+      return [];
+    }
+    throwQueryError("pinned new arrivals", error.message);
+  }
+
+  return data ?? [];
+}
+
 export async function getCatalogueProducts(options: {
   filters: CatalogueFilters;
   categorySlug?: string;
   collectionSlug?: string;
+  pinnedOnly?: boolean;
 }): Promise<CataloguePageData & { redirectPage?: number }> {
   const supabase = await createClient();
   const { filters } = options;
@@ -317,6 +359,9 @@ export async function getCatalogueProducts(options: {
     .overrideTypes<CatalogueProduct[], { merge: false }>();
 
   if (error) {
+    if (options.pinnedOnly && (error.code === "42703" || error.code === "PGRST204")) {
+      return { products: [], total: 0, pageSize };
+    }
     if (error.code === "PGRST103") {
       const { count: total, error: countError } = await buildProductQuery(
         supabase,

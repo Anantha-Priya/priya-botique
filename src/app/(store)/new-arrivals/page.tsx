@@ -37,6 +37,7 @@ async function NewArrivalsCatalogue({
         { label: "Home", href: "/" },
         { label: "New Arrivals" },
       ]}
+      pinnedOnly
       showCategoryFilter={false}
     />
   );

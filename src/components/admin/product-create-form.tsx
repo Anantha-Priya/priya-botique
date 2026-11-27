@@ -14,6 +14,7 @@ import {
 import {
   CATEGORY_LABELS,
   CLOTHING_SIZES,
+  FREE_SIZE_VALUE,
   PRODUCT_CATEGORY_SLUGS,
   type ClothingSize,
   type ProductCategorySlug,
@@ -76,6 +77,7 @@ type SizeStockState = Record<ClothingSize, { enabled: boolean; stock: string }>;
 
 function createInitialSizeStocks(): SizeStockState {
   return {
+    "Free Size": { enabled: false, stock: "0" },
     XS: { enabled: false, stock: "0" },
     S: { enabled: true, stock: "5" },
     M: { enabled: true, stock: "5" },
@@ -299,13 +301,30 @@ export function ProductForm({
   }
 
   function toggleSize(size: ClothingSize) {
-    setSizeStocks((current) => ({
-      ...current,
-      [size]: {
-        ...current[size],
-        enabled: !current[size].enabled,
-      },
-    }));
+    setSizeStocks((current) => {
+      if (size === FREE_SIZE_VALUE) {
+        // Enabling Free Size: flip its state; if enabling, disable all standard sizes
+        const nextEnabled = !current[FREE_SIZE_VALUE].enabled;
+        const next = { ...current };
+        next[FREE_SIZE_VALUE] = { ...current[FREE_SIZE_VALUE], enabled: nextEnabled };
+        if (nextEnabled) {
+          for (const s of CLOTHING_SIZES) {
+            if (s !== FREE_SIZE_VALUE) {
+              next[s] = { ...current[s], enabled: false };
+            }
+          }
+        }
+        return next;
+      } else {
+        // Enabling a standard size: disable Free Size
+        const next = { ...current };
+        next[size] = { ...current[size], enabled: !current[size].enabled };
+        if (next[size].enabled) {
+          next[FREE_SIZE_VALUE] = { ...current[FREE_SIZE_VALUE], enabled: false };
+        }
+        return next;
+      }
+    });
   }
 
   function updateSizeStock(size: ClothingSize, value: string) {
@@ -839,14 +858,63 @@ export function ProductForm({
         {isClothing ? (
           <div className="mt-6 border-t border-border pt-6">
             <h3 className="text-sm font-semibold text-foreground">
-              Available Sizes & Per-Size Stock
+              Available Sizes &amp; Per-Size Stock
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Toggle the sizes offered for this garment and set the stock quantity for each.
+              Toggle the sizes for this garment. <strong>Free Size</strong> is for sarees,
+              dupattas, and one-size garments — selecting it clears all standard sizes.
             </p>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {CLOTHING_SIZES.map((size) => {
+            {/* Free Size — first, visually separated */}
+            <div className="mt-4">
+              {(() => {
+                const entry = sizeStocks[FREE_SIZE_VALUE];
+                return (
+                  <div
+                    className={`flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors ${
+                      entry.enabled
+                        ? "border-brand-burgundy bg-brand-beige/40"
+                        : "border-border bg-background/60 opacity-75"
+                    }`}
+                  >
+                    <label className="flex cursor-pointer items-center gap-2.5 text-sm font-semibold text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={entry.enabled}
+                        onChange={() => toggleSize(FREE_SIZE_VALUE)}
+                        className="size-4 accent-brand-burgundy"
+                      />
+                      Free Size
+                      <span className="text-xs font-normal text-muted-foreground">(sarees, dupattas, one-size)</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Qty</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        disabled={!entry.enabled}
+                        value={entry.stock}
+                        onChange={(event) => updateSizeStock(FREE_SIZE_VALUE, event.target.value)}
+                        aria-label="Stock quantity for Free Size"
+                        className="min-h-9 w-20 rounded-md border border-border bg-card px-2.5 text-sm text-foreground disabled:opacity-40"
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Separator */}
+            <div className="relative my-4 flex items-center">
+              <div className="flex-1 border-t border-border" />
+              <span className="mx-3 text-xs text-muted-foreground">or choose standard sizes</span>
+              <div className="flex-1 border-t border-border" />
+            </div>
+
+            {/* Standard sizes */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {CLOTHING_SIZES.filter((size) => size !== FREE_SIZE_VALUE).map((size) => {
                 const entry = sizeStocks[size];
                 return (
                   <div

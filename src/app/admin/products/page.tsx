@@ -7,14 +7,15 @@ import {
   ChevronLeft,
   ChevronRight,
   Gem,
-  Pencil,
   Plus,
   Shirt,
   Sparkles,
 } from "lucide-react";
+import {
+  AdminProductList,
+  type AdminProductListItem,
+} from "@/components/admin/admin-product-list";
 import { getAdminContext } from "@/lib/admin/get-admin-context";
-import { optimizeCloudinaryImageUrl } from "@/lib/cloudinary-image";
-import { formatINR } from "@/lib/format-currency";
 
 export const metadata: Metadata = { title: "Manage products" };
 
@@ -61,6 +62,24 @@ export default function AdminProductsPage({
   );
 }
 
+interface AdminProductRow {
+  id: string;
+  name: string;
+  slug: string;
+  base_price: string | number;
+  is_active: boolean;
+  is_pinned?: boolean;
+  fabric: string | null;
+  categories: { name: string; slug: string } | { name: string; slug: string }[] | null;
+  product_images: {
+    image_url: string;
+    alt_text: string;
+    is_primary: boolean;
+    sort_order: number;
+  }[];
+  product_variants: { stock_quantity: number; is_active: boolean }[];
+}
+
 async function AdminProductsContent({
   searchParams,
 }: {
@@ -80,14 +99,32 @@ async function AdminProductsContent({
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  const { data: products, error, count } = await supabase
+  let migrationPending = false;
+  let { data: products, error, count } = await supabase
     .from("products")
     .select(
-      "id,name,slug,base_price,is_active,fabric,categories(name,slug),product_images(image_url,alt_text,is_primary,sort_order),product_variants(stock_quantity,is_active)",
+      "id,name,slug,base_price,is_active,is_pinned,fabric,categories(name,slug),product_images(image_url,alt_text,is_primary,sort_order),product_variants(stock_quantity,is_active)",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
-    .range(from, to);
+    .range(from, to)
+    .overrideTypes<AdminProductRow[], { merge: false }>();
+
+  if (error && (error.code === "42703" || error.code === "PGRST204")) {
+    migrationPending = true;
+    const fallback = await supabase
+      .from("products")
+      .select(
+        "id,name,slug,base_price,is_active,fabric,categories(name,slug),product_images(image_url,alt_text,is_primary,sort_order),product_variants(stock_quantity,is_active)",
+        { count: "exact" },
+      )
+      .order("created_at", { ascending: false })
+      .range(from, to)
+      .overrideTypes<AdminProductRow[], { merge: false }>();
+    products = fallback.data;
+    error = fallback.error;
+    count = fallback.count;
+  }
 
   if (error) {
     throw new Error(`Unable to load products: ${error.message}`);
@@ -95,6 +132,41 @@ async function AdminProductsContent({
 
   const totalCount = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  const listItems: AdminProductListItem[] = (products ?? []).map((product) => {
+    const categoryRecord = Array.isArray(product.categories)
+      ? product.categories[0]
+      : product.categories;
+    const images = [...(product.product_images ?? [])].sort(
+      (a, b) =>
+        Number(b.is_primary) - Number(a.is_primary) ||
+        a.sort_order - b.sort_order,
+    );
+    const primaryImage = images[0];
+    const activeVariants = (product.product_variants ?? []).filter(
+      (v) => v.is_active,
+    );
+    const totalStock = activeVariants.reduce(
+      (sum, v) => sum + Math.max(0, v.stock_quantity),
+      0,
+    );
+
+    return {
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      base_price: product.base_price,
+      is_active: product.is_active,
+      is_pinned: Boolean(product.is_pinned),
+      fabric: product.fabric,
+      categoryName: categoryRecord?.name ?? "Uncategorized",
+      categorySlug: categoryRecord?.slug ?? "",
+      primaryImageUrl: primaryImage?.image_url ?? null,
+      primaryImageAlt: primaryImage?.alt_text || product.name,
+      imageCount: images.length,
+      totalStock,
+    };
+  });
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
@@ -110,7 +182,7 @@ async function AdminProductsContent({
           Manage Products
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Add new products by category or edit existing catalogue products and their images.
+          Add new products by category, edit existing products, or pin products to feature them in New Arrivals.
         </p>
       </div>
 
@@ -156,118 +228,41 @@ async function AdminProductsContent({
           </span>
         </div>
 
-        {products && products.length > 0 ? (
-          <>
-            <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card shadow-(--shadow-card)">
-              <ul className="divide-y divide-border">
-                {products.map((product) => {
-                  const categoryRecord = Array.isArray(product.categories)
-                    ? product.categories[0]
-                    : product.categories;
-                  const images = [...(product.product_images ?? [])].sort(
-                    (a, b) =>
-                      Number(b.is_primary) - Number(a.is_primary) ||
-                      a.sort_order - b.sort_order,
-                  );
-                  const primaryImage = images[0];
-                  const activeVariants = (product.product_variants ?? []).filter(
-                    (v) => v.is_active,
-                  );
-                  const totalStock = activeVariants.reduce(
-                    (sum, v) => sum + Math.max(0, v.stock_quantity),
-                    0,
-                  );
+        <AdminProductList
+          initialProducts={listItems}
+          migrationPending={migrationPending}
+        />
 
-                  return (
-                    <li
-                      key={product.id}
-                      className="flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center sm:px-6"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="size-16 shrink-0 overflow-hidden rounded-xl border border-border bg-brand-beige/60">
-                          {primaryImage ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={optimizeCloudinaryImageUrl(primaryImage.image_url)}
-                              alt={primaryImage.alt_text || product.name}
-                              className="size-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex size-full items-center justify-center text-[11px] text-muted-foreground">
-                              No image
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-foreground">{product.name}</p>
-                            <span className="rounded-full bg-brand-beige px-2.5 py-0.5 text-xs font-medium text-foreground">
-                              {categoryRecord?.name ?? "Uncategorized"}
-                            </span>
-                            {!product.is_active ? (
-                              <span className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground">
-                                Draft
-                              </span>
-                            ) : null}
-                          </div>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            {formatINR(Number(product.base_price))} · {totalStock} in stock ·{" "}
-                            {images.length} {images.length === 1 ? "image" : "images"}
-                            {product.fabric ? ` · ${product.fabric}` : ""}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex shrink-0 items-center gap-3 self-end sm:self-center">
-                        <Link
-                          href={`/admin/products/${product.id}/edit`}
-                          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-4 py-1.5 text-sm font-medium text-brand-burgundy transition-colors hover:border-brand-burgundy hover:bg-brand-beige/50"
-                        >
-                          <Pencil className="size-3.5" aria-hidden="true" />
-                          Edit
-                        </Link>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+        {totalPages > 1 ? (
+          <nav
+            aria-label="Catalogue pagination"
+            className="mt-6 flex items-center justify-between text-sm"
+          >
+            <p className="text-muted-foreground">
+              Page {page} of {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              {page > 1 ? (
+                <Link
+                  href={`/admin/products?page=${page - 1}`}
+                  className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 font-medium hover:bg-secondary"
+                >
+                  <ChevronLeft className="size-4" aria-hidden="true" />
+                  Previous
+                </Link>
+              ) : null}
+              {page < totalPages ? (
+                <Link
+                  href={`/admin/products?page=${page + 1}`}
+                  className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 font-medium hover:bg-secondary"
+                >
+                  Next
+                  <ChevronRight className="size-4" aria-hidden="true" />
+                </Link>
+              ) : null}
             </div>
-
-            {totalPages > 1 ? (
-              <nav
-                aria-label="Catalogue pagination"
-                className="mt-6 flex items-center justify-between text-sm"
-              >
-                <p className="text-muted-foreground">
-                  Page {page} of {totalPages}
-                </p>
-                <div className="flex items-center gap-2">
-                  {page > 1 ? (
-                    <Link
-                      href={`/admin/products?page=${page - 1}`}
-                      className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 font-medium hover:bg-secondary"
-                    >
-                      <ChevronLeft className="size-4" aria-hidden="true" />
-                      Previous
-                    </Link>
-                  ) : null}
-                  {page < totalPages ? (
-                    <Link
-                      href={`/admin/products?page=${page + 1}`}
-                      className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-border bg-card px-3 font-medium hover:bg-secondary"
-                    >
-                      Next
-                      <ChevronRight className="size-4" aria-hidden="true" />
-                    </Link>
-                  ) : null}
-                </div>
-              </nav>
-            ) : null}
-          </>
-        ) : (
-          <p className="mt-4 text-sm text-muted-foreground">No products found yet.</p>
-        )}
+          </nav>
+        ) : null}
       </section>
     </main>
   );

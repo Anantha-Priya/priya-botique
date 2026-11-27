@@ -13,14 +13,13 @@ export function getVariantOptions(
   variants: SelectionVariant[],
   key: "size" | "color",
 ): string[] {
-  return [
-    ...new Set(
-      variants
-        .filter((variant) => variant.is_active)
-        .map((variant) => variant[key])
-        .filter((value): value is string => Boolean(value)),
-    ),
-  ];
+  const active = variants.filter((variant) => variant.is_active);
+  if (key === "size") {
+    const sizes = [...new Set(active.map((variant) => variant.size).filter((value): value is string => Boolean(value)))];
+    if (sizes.includes("Free Size")) return ["Free Size"];
+    return sizes;
+  }
+  return [...new Set(active.map((variant) => variant.color).filter((value): value is string => Boolean(value)))];
 }
 
 export function getAttributeOptions(

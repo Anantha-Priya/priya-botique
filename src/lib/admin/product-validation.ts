@@ -1,7 +1,10 @@
 import { z } from "zod";
 
-export const CLOTHING_SIZES = ["XS", "S", "M", "L", "XL", "XXL"] as const;
+export const CLOTHING_SIZES = ["Free Size", "XS", "S", "M", "L", "XL", "XXL"] as const;
 export type ClothingSize = (typeof CLOTHING_SIZES)[number];
+
+/** Sentinel value used for one-size-fits-all garments (sarees, dupattas, etc.). */
+export const FREE_SIZE_VALUE = "Free Size" as const;
 
 export const PRODUCT_CATEGORY_SLUGS = ["clothing", "jewellery", "accessories"] as const;
 export type ProductCategorySlug = (typeof PRODUCT_CATEGORY_SLUGS)[number];

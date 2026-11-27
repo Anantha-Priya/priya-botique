@@ -17,6 +17,7 @@ interface CatalogueBrowserProps {
   searchParams: CatalogueSearchParams;
   categorySlug?: string;
   collectionSlug?: string;
+  pinnedOnly?: boolean;
   breadcrumbs: BreadcrumbItem[];
   showCategoryFilter?: boolean;
 }
@@ -27,6 +28,7 @@ export async function CatalogueBrowser({
   searchParams,
   categorySlug,
   collectionSlug,
+  pinnedOnly,
   breadcrumbs,
   showCategoryFilter = true,
 }: CatalogueBrowserProps) {
@@ -36,6 +38,7 @@ export async function CatalogueBrowser({
     filters,
     categorySlug,
     collectionSlug,
+    pinnedOnly,
   });
 
   if (redirectPage !== undefined) {

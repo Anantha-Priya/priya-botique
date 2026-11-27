@@ -18,6 +18,7 @@ import {
 import type { ProductDetail } from "@/lib/catalogue";
 
 const STANDARD_CLOTHING_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+const FREE_SIZE_VALUE = "Free Size";
 
 function attributeLabel(key: string): string {
   return key.charAt(0).toUpperCase() + key.slice(1);
@@ -36,11 +37,28 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
     null;
 
   const sizeOptions = getVariantOptions(variants, "size");
+  // Keep Free Size separate; order standard sizes in canonical order
+  const CANONICAL_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
+  const isFreeSizeOnly =
+    sizeOptions.length === 1 && sizeOptions[0] === FREE_SIZE_VALUE;
   const clothingSizeButtons = isClothing
-    ? [
-        ...STANDARD_CLOTHING_SIZES,
-        ...sizeOptions.filter((option) => !STANDARD_CLOTHING_SIZES.includes(option)),
-      ]
+    ? sizeOptions.includes(FREE_SIZE_VALUE)
+      ? isFreeSizeOnly
+        ? [FREE_SIZE_VALUE]
+        : [
+            FREE_SIZE_VALUE,
+            ...sizeOptions
+              .filter((o) => o !== FREE_SIZE_VALUE)
+              .sort(
+                (a, b) =>
+                  (CANONICAL_ORDER.indexOf(a) === -1 ? 999 : CANONICAL_ORDER.indexOf(a)) -
+                  (CANONICAL_ORDER.indexOf(b) === -1 ? 999 : CANONICAL_ORDER.indexOf(b)),
+              ),
+          ]
+      : [
+          ...CANONICAL_ORDER.filter((o) => sizeOptions.includes(o)),
+          ...sizeOptions.filter((o) => !CANONICAL_ORDER.includes(o) && o !== FREE_SIZE_VALUE),
+        ]
     : [];
   const colorOptions = getVariantOptions(variants, "color");
   const attributeOptions = getAttributeOptions(variants);
@@ -60,7 +78,9 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
         first.sort_order - second.sort_order,
     )[0]?.image_url ?? null,
   );
-  const [size, setSize] = useState(isClothing ? (defaultVariant?.size ?? "") : "");
+  const [size, setSize] = useState(
+    isClothing ? (isFreeSizeOnly ? FREE_SIZE_VALUE : (defaultVariant?.size ?? "")) : "",
+  );
   const [color, setColor] = useState(defaultVariant?.color ?? "");
   const [attributes, setAttributes] =
     useState<Record<string, string>>(initialAttributes);
@@ -292,47 +312,59 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
 
         <div className="mt-8 space-y-5">
           {isClothing && clothingSizeButtons.length > 0 ? (
-            <div>
-              <div className="mb-2.5 flex items-center justify-between">
-                <p className="text-sm font-medium text-foreground">Select Size</p>
-                {size ? (
-                  <span className="text-xs text-muted-foreground">
-                    Selected: <strong className="text-foreground">{size}</strong>
-                  </span>
-                ) : null}
+            isFreeSizeOnly ? (
+              /* Free Size product — no size selector needed */
+              <div>
+                <p className="mb-2 text-sm font-medium text-foreground">Size</p>
+                <span className="inline-flex items-center rounded-lg border border-brand-burgundy bg-brand-beige/40 px-4 py-2 text-sm font-semibold text-foreground">
+                  Free Size
+                </span>
               </div>
-              <div className="flex flex-wrap gap-2.5" role="group" aria-label="Available sizes">
-                {clothingSizeButtons.map((option) => {
-                  const optionStock = getStockForSize(option);
-                  const isAvailable = optionStock > 0;
-                  const isSelected = size === option;
+            ) : (
+              <div>
+                <div className="mb-2.5 flex items-center justify-between">
+                  <p className="text-sm font-medium text-foreground">Select Size</p>
+                  {size ? (
+                    <span className="text-xs text-muted-foreground">
+                      Selected: <strong className="text-foreground">{size}</strong>
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap gap-2.5" role="group" aria-label="Available sizes">
+                  {clothingSizeButtons
+                    .filter((option) => sizeOptions.includes(option))
+                    .map((option) => {
+                      const optionStock = getStockForSize(option);
+                      const isAvailable = optionStock > 0;
+                      const isSelected = size === option;
 
-                  return (
-                    <button
-                      key={option}
-                      type="button"
-                      disabled={!isAvailable}
-                      aria-pressed={isSelected}
-                      onClick={() => {
-                        if (!isAvailable) return;
-                        setSize(option);
-                        setQuantity(1);
-                        setMessage("");
-                      }}
-                      className={`min-h-11 min-w-12 rounded-lg border px-3.5 text-sm font-semibold transition-colors ${
-                        isSelected
-                          ? "border-brand-burgundy bg-brand-burgundy text-white"
-                          : isAvailable
-                            ? "border-border bg-card text-foreground hover:border-brand-burgundy hover:bg-brand-beige/50"
-                            : "cursor-not-allowed border-border bg-muted/50 text-muted-foreground/50 line-through opacity-60"
-                      }`}
-                    >
-                      {option}
-                    </button>
-                  );
-                })}
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          disabled={!isAvailable}
+                          aria-pressed={isSelected}
+                          onClick={() => {
+                            if (!isAvailable) return;
+                            setSize(option);
+                            setQuantity(1);
+                            setMessage("");
+                          }}
+                          className={`min-h-11 min-w-12 rounded-lg border px-3.5 text-sm font-semibold transition-colors ${
+                            isSelected
+                              ? "border-brand-burgundy bg-brand-burgundy text-white"
+                              : isAvailable
+                                ? "border-border bg-card text-foreground hover:border-brand-burgundy hover:bg-brand-beige/50"
+                                : "cursor-not-allowed border-border bg-muted/50 text-muted-foreground/50 line-through opacity-60"
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      );
+                    })}
+                </div>
               </div>
-            </div>
+            )
           ) : null}
 
           {colorOptions.length > 1 ? (
@@ -412,13 +444,13 @@ export function ProductDetail({ product }: { product: ProductDetail }) {
             <p className="mt-2 text-sm text-muted-foreground">
               {selectedVariant
                 ? stock > 0
-                  ? isClothing && size
+                  ? isClothing && size && !isFreeSizeOnly
                     ? `${stock} in stock for size ${size}`
                     : `${stock} in stock`
-                  : isClothing && size
+                  : isClothing && size && !isFreeSizeOnly
                     ? `Out of stock for size ${size}`
                     : "Currently out of stock"
-                : isClothing
+                : isClothing && !isFreeSizeOnly
                   ? "Select an available size to check stock"
                   : "Select options to check availability"}
             </p>
