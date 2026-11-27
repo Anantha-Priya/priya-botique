@@ -36,10 +36,26 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           email: String(form.get("email") ?? ""),
           password: String(form.get("password") ?? ""),
         });
-        const { error: authError } = await supabase.auth.signInWithPassword(values);
+        const { data: signInData, error: authError } =
+          await supabase.auth.signInWithPassword(values);
         if (authError) throw authError;
+
+        let isAdmin = false;
+        if (signInData.user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", signInData.user.id)
+            .maybeSingle();
+          isAdmin = profile?.role === "admin";
+        }
+
         const next = searchParams.get("next");
-        router.push(next?.startsWith("/account") ? next : "/account");
+        if (isAdmin) {
+          router.push(next?.startsWith("/admin") ? next : "/admin/dashboard");
+        } else {
+          router.push(next?.startsWith("/account") ? next : "/account");
+        }
         router.refresh();
         return;
       }

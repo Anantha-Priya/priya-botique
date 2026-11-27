@@ -28,16 +28,34 @@ export async function updateSession(request: NextRequest) {
   });
 
   const { data } = await supabase.auth.getUser();
-  const isProtectedAccountRoute =
-    request.nextUrl.pathname === "/account" ||
-    request.nextUrl.pathname.startsWith("/account/");
+  const pathname = request.nextUrl.pathname;
 
-  if (isProtectedAccountRoute && !data.user) {
+  const isProtectedAccountRoute =
+    pathname === "/account" || pathname.startsWith("/account/");
+  const isAdminRoute =
+    pathname === "/admin" || pathname.startsWith("/admin/");
+
+  if ((isProtectedAccountRoute || isAdminRoute) && !data.user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.search = "";
-    loginUrl.searchParams.set("next", request.nextUrl.pathname);
+    loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (isAdminRoute && data.user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .maybeSingle();
+
+    if (profile?.role !== "admin") {
+      const accountUrl = request.nextUrl.clone();
+      accountUrl.pathname = "/account";
+      accountUrl.search = "";
+      return NextResponse.redirect(accountUrl);
+    }
   }
 
   return response;

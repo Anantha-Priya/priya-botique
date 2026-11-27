@@ -14,12 +14,12 @@ export async function getAdminContext() {
   }
 
   if (!user) {
-    return { supabase, user: null, isAdmin: false };
+    return { supabase, user: null, isAdmin: false, fullName: "" };
   }
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role,full_name")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -27,5 +27,10 @@ export async function getAdminContext() {
     throw new Error(`Unable to verify administrator access: ${profileError.message}`);
   }
 
-  return { supabase, user, isAdmin: profile?.role === "admin" };
+  return {
+    supabase,
+    user,
+    isAdmin: profile?.role === "admin",
+    fullName: profile?.full_name ?? "",
+  };
 }

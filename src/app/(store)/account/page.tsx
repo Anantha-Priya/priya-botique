@@ -49,11 +49,11 @@ export default async function AccountPage() {
         <nav aria-label="Account actions" className="flex flex-wrap items-center gap-2.5">
           {profile?.role === "admin" ? (
             <Link
-              href="/admin/products"
+              href="/admin/dashboard"
               className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-brand-burgundy px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-burgundy/90"
             >
               <PackagePlus className="size-4" aria-hidden="true" />
-              Manage products
+              Admin Dashboard
             </Link>
           ) : null}
           <form action="/auth/logout" method="post">

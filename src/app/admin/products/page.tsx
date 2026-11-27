@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import {
   ArrowLeft,
@@ -91,7 +91,7 @@ async function AdminProductsContent({
     redirect("/login?next=%2Fadmin%2Fproducts");
   }
   if (!isAdmin) {
-    notFound();
+    redirect("/account");
   }
 
   const params = await searchParams;
@@ -172,11 +172,11 @@ async function AdminProductsContent({
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
       <div>
         <Link
-          href="/account"
+          href="/admin/dashboard"
           className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-brand-burgundy hover:underline"
         >
           <ArrowLeft className="size-3.5" aria-hidden="true" />
-          Back to Account
+          Back to Dashboard
         </Link>
         <h1 className="mt-3 font-heading text-4xl font-medium text-foreground">
           Manage Products

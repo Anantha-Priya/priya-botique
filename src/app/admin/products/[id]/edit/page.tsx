@@ -46,7 +46,7 @@ async function EditProductContent({ params }: EditProductPageProps) {
     redirect(`/login?next=${encodeURIComponent(`/admin/products/${id}/edit`)}`);
   }
   if (!isAdmin) {
-    notFound();
+    redirect("/account");
   }
 
   const { data: product, error } = await supabase

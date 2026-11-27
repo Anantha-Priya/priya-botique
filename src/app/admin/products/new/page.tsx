@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import { ProductCreateForm } from "@/components/admin/product-create-form";
@@ -47,7 +47,7 @@ async function NewProductContent({ searchParams }: NewProductPageProps) {
     redirect(`/login?next=${encodeURIComponent(`/admin/products/new?category=${initialCategory}`)}`);
   }
   if (!isAdmin) {
-    notFound();
+    redirect("/account");
   }
 
   const cloudinaryConfigured = Boolean(
